@@ -1,6 +1,4 @@
-bash -lc python - <<'PY'
-from pathlib import Path
-html = r'''<!doctype html>
+<!doctype html>
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8" />
@@ -21,7 +19,7 @@ html = r'''<!doctype html>
           GitHub Pages 可部署单页版
         </div>
         <h1 class="text-2xl font-bold tracking-tight">RunningHub 换装工作流网页控制台</h1>
-        <p class="mt-2 text-sm text-slate-400">上传模特图、上衣图、裤子图，可切换“只换上衣”模式。</p>
+        <p class="mt-2 text-sm text-slate-400">上传模特图和服装图，支持单图模式与双件模式。单图模式下，系统会自动关闭图3，仅用一张服装参考图并由提示词决定换上衣还是换裤子。</p>
       </div>
       <div class="rounded-2xl border border-amber-500/20 bg-amber-500/10 px-4 py-3 text-sm text-amber-100 md:max-w-md">
         <div class="font-semibold">安全提醒</div>
@@ -44,7 +42,7 @@ html = r'''<!doctype html>
             </div>
             <div>
               <label class="mb-1 block text-xs text-slate-400">提示词</label>
-              <textarea id="prompt" rows="4" class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm outline-none transition focus:border-violet-500">让图1中的女模特穿上图2中的上衣，保持人物姿势、发型、脸部、包包、裤子和鞋子不变，只替换上衣，确保上衣颜色、材质和图案一致。</textarea>
+              <textarea id="prompt" rows="4" class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm outline-none transition focus:border-violet-500">让图1中的女模特穿上图2中的上衣，需确保衣服的一致性。</textarea>
             </div>
             <div>
               <label class="mb-1 block text-xs text-slate-400">输出分辨率</label>
@@ -56,10 +54,10 @@ html = r'''<!doctype html>
               </div>
             </div>
             <label class="flex cursor-pointer items-center gap-3 rounded-2xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-100">
-              <input id="onlyTop" type="checkbox" class="h-4 w-4 accent-emerald-500" checked />
+              <input id="dualMode" type="checkbox" class="h-4 w-4 accent-emerald-500" />
               <div>
-                <div class="font-medium">只换上衣</div>
-                <div class="mt-0.5 text-xs text-emerald-200/90">勾选后会中和默认裤子节点，并在提示词里强调保持下装不变。</div>
+                <div class="font-medium">双件模式（上衣+裤子）</div>
+                <div class="mt-0.5 text-xs text-emerald-200/90">不勾选时为单图模式：你只需要上传一张服装图，系统会自动关闭图3，提示词决定是换上衣还是换裤子。勾选后才会同时启用上衣图和裤子图。</div>
               </div>
             </label>
           </div>
@@ -76,29 +74,34 @@ html = r'''<!doctype html>
               </label>
             </div>
             <div>
-              <label class="mb-2 block text-xs text-slate-400">上衣图（节点 11 / Image2）</label>
+              <label class="mb-2 block text-xs text-slate-400">服装图1（节点 11 / Image2）</label>
               <label class="block cursor-pointer rounded-3xl border border-dashed border-slate-700 bg-slate-950 p-4 transition hover:border-violet-500">
                 <input id="topInput" type="file" accept="image/*" class="hidden" />
-                <div id="topPreview" class="flex min-h-[170px] items-center justify-center overflow-hidden rounded-2xl bg-slate-900 text-center text-sm text-slate-500">点击上传上衣图</div>
+                <div id="topPreview" class="flex min-h-[170px] items-center justify-center overflow-hidden rounded-2xl bg-slate-900 text-center text-sm text-slate-500">点击上传服装图1</div>
               </label>
             </div>
             <div id="pantsBlock">
-              <label class="mb-2 block text-xs text-slate-400">裤子图（节点 10 / Image3，可选）</label>
+              <label class="mb-2 block text-xs text-slate-400">服装图2（节点 10 / Image3，双件模式时使用）</label>
               <label class="block cursor-pointer rounded-3xl border border-dashed border-slate-700 bg-slate-950 p-4 transition hover:border-violet-500">
                 <input id="pantsInput" type="file" accept="image/*" class="hidden" />
-                <div id="pantsPreview" class="flex min-h-[170px] items-center justify-center overflow-hidden rounded-2xl bg-slate-900 text-center text-sm text-slate-500">不勾选“只换上衣”时可上传裤子图</div>
+                <div id="pantsPreview" class="flex min-h-[170px] items-center justify-center overflow-hidden rounded-2xl bg-slate-900 text-center text-sm text-slate-500">双件模式时可上传服装图2</div>
               </label>
             </div>
           </div>
 
           <div class="mt-4 rounded-2xl border border-sky-500/20 bg-sky-500/10 p-3 text-xs leading-6 text-sky-100">
-            当前按你最新工作流接入：<span class="font-semibold">4 = 模特图</span>、<span class="font-semibold">11 = 上衣图</span>、<span class="font-semibold">10 = 裤子图</span>、<span class="font-semibold">12 = 提示词</span>。<br>
-            勾选“只换上衣”时，网页会给节点10传一张透明占位图，避免调用工作流里原来残留的默认裤子图。
+            当前按你最新工作流接入：<span class="font-semibold">4 = 模特图</span>、<span class="font-semibold">11 = 图2参考图</span>、<span class="font-semibold">10 = 图3参考图</span>、<span class="font-semibold">12 = 提示词</span>。<br>
+            单图模式下，系统会把你上传的唯一服装图自动送进图2，并给图3传透明占位图；这样你可以只靠提示词控制“换上衣”或“换裤子”。双件模式下，服装图1走图2，服装图2走图3。
           </div>
 
-          <button id="generateBtn" class="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-violet-500 bg-gradient-to-r from-violet-600 to-indigo-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-violet-900/30 transition hover:from-violet-500 hover:to-indigo-500 disabled:cursor-not-allowed disabled:opacity-50">
-            开始生成
-          </button>
+          <div class="mt-5 grid grid-cols-2 gap-3">
+            <button id="generateBtn" class="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-violet-500 bg-gradient-to-r from-violet-600 to-indigo-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-violet-900/30 transition hover:from-violet-500 hover:to-indigo-500 disabled:cursor-not-allowed disabled:opacity-50">
+              开始生成
+            </button>
+            <button id="cancelBtn" disabled class="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm font-semibold text-slate-300 transition hover:border-rose-500 hover:text-rose-200 disabled:cursor-not-allowed disabled:opacity-50">
+              取消等待
+            </button>
+          </div>
         </div>
       </section>
 
@@ -141,9 +144,10 @@ html = r'''<!doctype html>
                 <div class="mb-3 text-xs text-slate-400">使用说明</div>
                 <ol class="list-decimal space-y-2 pl-5 text-sm leading-6 text-slate-300">
                   <li>输入 API Key。</li>
-                  <li>上传模特图和上衣图。</li>
-                  <li>只换上衣就保持勾选；上下装都换就取消勾选并上传裤子图。</li>
-                  <li>成功后可直接预览并下载结果图。</li>
+                  <li>上传模特图。</li>
+                  <li>单图模式：上传一张服装图，由提示词决定换上衣还是换裤子。</li>
+                  <li>双件模式：上传两张服装图，分别对应图2和图3。</li>
+                  <li>生成完成后可预览大图或下载。</li>
                 </ol>
               </div>
             </div>
@@ -161,8 +165,16 @@ html = r'''<!doctype html>
     </main>
   </div>
 
+  <div id="previewModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/80 p-4">
+    <div class="relative w-full max-w-5xl rounded-3xl border border-slate-700 bg-slate-950 p-4">
+      <button id="closePreviewBtn" class="absolute right-4 top-4 rounded-full border border-slate-700 bg-slate-900 px-3 py-1 text-sm text-slate-200">关闭</button>
+      <img id="previewImage" src="" alt="preview" class="max-h-[82vh] w-full rounded-2xl object-contain" />
+    </div>
+  </div>
+
   <script>
-    const TRANSPARENT_PNG_DATA_URL = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Wn1n4cAAAAASUVORK5CYII=';
+    const TRANSPARENT_PNG_DATA_URL =
+      'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9WnXcRkAAAAASUVORK5CYII=';
 
     const state = {
       resolution: '4k',
@@ -171,21 +183,28 @@ html = r'''<!doctype html>
       elapsedTimer: null,
       elapsedSeconds: 0,
       progress: 0,
+      currentTaskId: null,
+      stoppedByUser: false,
     };
 
     const el = {
       apiKey: document.getElementById('apiKey'),
       workflowId: document.getElementById('workflowId'),
       prompt: document.getElementById('prompt'),
-      onlyTop: document.getElementById('onlyTop'),
+      dualMode: document.getElementById('dualMode'),
+
       modelInput: document.getElementById('modelInput'),
       topInput: document.getElementById('topInput'),
       pantsInput: document.getElementById('pantsInput'),
+
       modelPreview: document.getElementById('modelPreview'),
       topPreview: document.getElementById('topPreview'),
       pantsPreview: document.getElementById('pantsPreview'),
       pantsBlock: document.getElementById('pantsBlock'),
+
       generateBtn: document.getElementById('generateBtn'),
+      cancelBtn: document.getElementById('cancelBtn'),
+
       resultWrap: document.getElementById('resultWrap'),
       progressBar: document.getElementById('progressBar'),
       progressText: document.getElementById('progressText'),
@@ -194,9 +213,14 @@ html = r'''<!doctype html>
       taskIdText: document.getElementById('taskIdText'),
       taskStatusText: document.getElementById('taskStatusText'),
       taskCostTimeText: document.getElementById('taskCostTimeText'),
+
       historyWrap: document.getElementById('historyWrap'),
       clearHistoryBtn: document.getElementById('clearHistoryBtn'),
       resolutionBtns: Array.from(document.querySelectorAll('.resolution-btn')),
+
+      previewModal: document.getElementById('previewModal'),
+      previewImage: document.getElementById('previewImage'),
+      closePreviewBtn: document.getElementById('closePreviewBtn'),
     };
 
     function saveSettings() {
@@ -204,17 +228,16 @@ html = r'''<!doctype html>
       localStorage.setItem('rh_workflow_id', el.workflowId.value.trim());
       localStorage.setItem('rh_prompt', el.prompt.value);
       localStorage.setItem('rh_resolution', state.resolution);
-      localStorage.setItem('rh_only_top', el.onlyTop.checked ? '1' : '0');
+      localStorage.setItem('rh_dual_mode', el.dualMode.checked ? '1' : '0');
     }
 
     function loadSettings() {
       el.apiKey.value = localStorage.getItem('rh_api_key') || '';
       el.workflowId.value = localStorage.getItem('rh_workflow_id') || '2033182322152972289';
-      el.prompt.value = localStorage.getItem('rh_prompt') || '让图1中的女模特穿上图2中的上衣，保持人物姿势、发型、脸部、包包、裤子和鞋子不变，只替换上衣，确保上衣颜色、材质和图案一致。';
+      el.prompt.value = localStorage.getItem('rh_prompt') || '让图1中的女模特穿上图2中的上衣，需确保衣服的一致性。';
       state.resolution = localStorage.getItem('rh_resolution') || '4k';
-      el.onlyTop.checked = (localStorage.getItem('rh_only_top') || '1') === '1';
+      el.dualMode.checked = localStorage.getItem('rh_dual_mode') === '1';
       paintResolutionButtons();
-      refreshPantsState();
     }
 
     function formatTime(seconds) {
@@ -259,8 +282,8 @@ html = r'''<!doctype html>
       return new Blob([u8arr], { type: mime });
     }
 
-    async function uploadImage(dataUrl, apiKey, filename = `upload-${Date.now()}.png`) {
-      const blob = dataURLtoBlob(dataUrl);
+    async function uploadImage(base64, apiKey, filename = `upload-${Date.now()}.png`) {
+      const blob = dataURLtoBlob(base64);
       const formData = new FormData();
       formData.append('file', blob, filename);
 
@@ -277,10 +300,42 @@ html = r'''<!doctype html>
       return json.data.fileName;
     }
 
-    function buildPrompt(prompt) {
-      if (!el.onlyTop.checked) return prompt;
-      const extra = ' 只替换上衣，保持原裤子、裙子、鞋子和下半身穿搭不变，不要新增或替换任何裤子。';
-      return prompt.includes('不要新增或替换任何裤子') ? prompt : `${prompt}${extra}`;
+    function buildPrompt(prompt, mode) {
+      const clean = (prompt || '').trim();
+      if (mode === 'single') return clean;
+      return clean;
+    }
+
+    function resolveGarmentMode() {
+      const hasTop = !!state.images.top;
+      const hasPants = !!state.images.pants;
+      const dualMode = el.dualMode.checked;
+
+      if (!hasTop && !hasPants) {
+        throw new Error('请至少上传一张服装图');
+      }
+
+      if (dualMode) {
+        if (!hasTop) throw new Error('你开启了双件模式，请先上传服装图1');
+        if (!hasPants) throw new Error('你开启了双件模式，请先上传服装图2');
+        return {
+          mode: 'dual',
+          image2Data: state.images.top,
+          image3Data: state.images.pants,
+          image2Label: '服装图1',
+          image3Label: '服装图2',
+        };
+      }
+
+      const singleData = state.images.top || state.images.pants;
+      const singleLabel = state.images.top ? '服装图1' : '服装图2';
+      return {
+        mode: 'single',
+        image2Data: singleData,
+        image3Data: TRANSPARENT_PNG_DATA_URL,
+        image2Label: singleLabel,
+        image3Label: '透明占位图',
+      };
     }
 
     async function runWorkflow({ apiKey, workflowId, prompt, modelFileName, topFileName, pantsFileName }) {
@@ -291,7 +346,7 @@ html = r'''<!doctype html>
           { nodeId: '11', fieldName: 'image', fieldValue: topFileName },
           { nodeId: '10', fieldName: 'image', fieldValue: pantsFileName },
           { nodeId: '8', fieldName: 'resolution', fieldValue: state.resolution },
-          { nodeId: '12', fieldName: 'text', fieldValue: buildPrompt(prompt) },
+          { nodeId: '12', fieldName: 'text', fieldValue: prompt },
         ],
         instanceType: 'default',
         usePersonalQueue: false,
@@ -345,6 +400,11 @@ html = r'''<!doctype html>
       state.elapsedTimer = null;
     }
 
+    function setGeneratingUi(isGenerating) {
+      el.generateBtn.disabled = isGenerating;
+      el.cancelBtn.disabled = !isGenerating;
+    }
+
     function saveHistory(item) {
       const history = JSON.parse(localStorage.getItem('rh_history') || '[]');
       history.unshift(item);
@@ -361,9 +421,9 @@ html = r'''<!doctype html>
 
       el.historyWrap.innerHTML = history.map(item => `
         <div class="overflow-hidden rounded-2xl border border-slate-800 bg-slate-950">
-          <a href="${item.url}" target="_blank" rel="noreferrer">
+          <button onclick="openPreview('${item.url}')" class="block w-full">
             <img src="${item.url}" alt="history" class="h-36 w-full object-cover" />
-          </a>
+          </button>
           <div class="space-y-1 p-3">
             <div class="line-clamp-2 text-xs text-slate-300">${escapeHtml(item.prompt)}</div>
             <div class="text-[11px] text-slate-500">${item.time}</div>
@@ -375,9 +435,12 @@ html = r'''<!doctype html>
     function showResultImage(url) {
       el.resultWrap.innerHTML = `
         <div class="w-full">
-          <img src="${url}" alt="result" class="max-h-[640px] w-full rounded-2xl object-contain" />
-          <div class="mt-4 flex gap-3">
-            <a href="${url}" target="_blank" rel="noreferrer" class="rounded-2xl border border-violet-500 bg-violet-600 px-4 py-2 text-sm font-medium text-white">打开原图</a>
+          <button onclick="openPreview('${url}')" class="block w-full">
+            <img src="${url}" alt="result" class="max-h-[640px] w-full rounded-2xl object-contain" />
+          </button>
+          <div class="mt-4 flex flex-wrap gap-3">
+            <button onclick="openPreview('${url}')" class="rounded-2xl border border-violet-500 bg-violet-600 px-4 py-2 text-sm font-medium text-white">预览大图</button>
+            <a href="${url}" target="_blank" rel="noreferrer" class="rounded-2xl border border-slate-700 bg-slate-900 px-4 py-2 text-sm text-slate-200">打开原图</a>
             <a href="${url}" download class="rounded-2xl border border-slate-700 bg-slate-900 px-4 py-2 text-sm text-slate-200">下载图片</a>
           </div>
         </div>
@@ -408,13 +471,15 @@ html = r'''<!doctype html>
     }
 
     function refreshPantsState() {
-      const onlyTop = el.onlyTop.checked;
-      el.pantsInput.disabled = onlyTop;
-      el.pantsBlock.classList.toggle('opacity-60', onlyTop);
-      if (onlyTop) {
-        el.pantsPreview.innerHTML = '<div class="px-4 text-center text-sm text-slate-500">已开启“只换上衣”，本次会自动上传透明占位图来中和默认裤子节点。</div>';
+      const dualMode = el.dualMode.checked;
+      el.pantsInput.disabled = !dualMode;
+      el.pantsBlock.classList.toggle('opacity-60', !dualMode);
+      if (!dualMode) {
+        if (!state.images.pants) {
+          el.pantsPreview.innerHTML = '<div class="px-4 text-center text-sm text-slate-500">当前为单图模式：图3会自动关闭。你可以把裤子图直接上传到服装图1，也可以继续只上传上衣图。</div>';
+        }
       } else if (!state.images.pants) {
-        el.pantsPreview.innerHTML = '<div class="px-4 text-center text-sm text-slate-500">请上传裤子图；不上传则只能用于测试，效果可能不稳定。</div>';
+        el.pantsPreview.innerHTML = '<div class="px-4 text-center text-sm text-slate-500">当前为双件模式，请在这里上传服装图2。</div>';
       }
     }
 
@@ -422,19 +487,25 @@ html = r'''<!doctype html>
       const apiKey = el.apiKey.value.trim();
       const workflowId = el.workflowId.value.trim();
       const prompt = el.prompt.value.trim();
-      const onlyTop = el.onlyTop.checked;
 
       if (!apiKey) return alert('请先输入 API Key');
       if (!workflowId) return alert('请先输入工作流 ID');
       if (!state.images.model) return alert('请先上传模特图');
-      if (!state.images.top) return alert('请先上传上衣图');
       if (!prompt) return alert('请先输入提示词');
-      if (!onlyTop && !state.images.pants) return alert('你取消了“只换上衣”，请再上传裤子图');
+
+      let garmentConfig;
+      try {
+        garmentConfig = resolveGarmentMode();
+      } catch (err) {
+        return alert(err.message || '请检查服装图上传状态');
+      }
 
       saveSettings();
-      el.generateBtn.disabled = true;
+      state.stoppedByUser = false;
+      state.currentTaskId = null;
+      setGeneratingUi(true);
       setStatus('上传图片中', 'running');
-      showMessage('正在上传图片并提交工作流，请稍候…', 'running');
+      showMessage(`正在上传图片并提交工作流，请稍候… 当前模式：${garmentConfig.mode === 'dual' ? '双件模式' : '单图模式'}。`, 'running');
       setProgress(8);
       startElapsedTimer();
       el.taskIdText.textContent = '-';
@@ -444,8 +515,8 @@ html = r'''<!doctype html>
       try {
         const uploadList = [
           uploadImage(state.images.model, apiKey, `model-${Date.now()}.png`),
-          uploadImage(state.images.top, apiKey, `top-${Date.now()}.png`),
-          uploadImage(onlyTop ? TRANSPARENT_PNG_DATA_URL : state.images.pants, apiKey, onlyTop ? `blank-pants-${Date.now()}.png` : `pants-${Date.now()}.png`),
+          uploadImage(garmentConfig.image2Data, apiKey, `image2-${Date.now()}.png`),
+          uploadImage(garmentConfig.image3Data, apiKey, garmentConfig.mode === 'dual' ? `image3-${Date.now()}.png` : `blank-image3-${Date.now()}.png`),
         ];
 
         const [modelFileName, topFileName, pantsFileName] = await Promise.all(uploadList);
@@ -453,8 +524,9 @@ html = r'''<!doctype html>
         setStatus('提交任务中', 'running');
         setProgress(18);
 
-        const runResult = await runWorkflow({ apiKey, workflowId, prompt, modelFileName, topFileName, pantsFileName });
+        const runResult = await runWorkflow({ apiKey, workflowId, prompt: buildPrompt(prompt, garmentConfig.mode), modelFileName, topFileName, pantsFileName });
         const taskId = runResult.taskId || runResult.data?.taskId;
+        state.currentTaskId = taskId;
         el.taskIdText.textContent = taskId;
         el.taskStatusText.textContent = runResult.status || '-';
         setStatus('任务已提交', 'running');
@@ -489,8 +561,8 @@ html = r'''<!doctype html>
               setProgress(100);
               if (!resultUrl) throw new Error('任务成功，但没有解析到结果图片 URL');
               showResultImage(resultUrl);
-              saveHistory({ url: resultUrl, prompt: buildPrompt(prompt), time: new Date().toLocaleString('zh-CN') });
-              el.generateBtn.disabled = false;
+              saveHistory({ url: resultUrl, prompt, time: new Date().toLocaleString('zh-CN') });
+              setGeneratingUi(false);
               return;
             }
 
@@ -499,22 +571,44 @@ html = r'''<!doctype html>
               setStatus('生成失败', 'error');
               setProgress(100);
               showMessage(query.errorMessage || query.data?.errorMessage || '任务失败', 'error');
-              el.generateBtn.disabled = false;
+              setGeneratingUi(false);
             }
           } catch (err) {
             stopAllTimers();
             setStatus('查询失败', 'error');
             showMessage(err.message || '查询任务失败', 'error');
-            el.generateBtn.disabled = false;
+            setGeneratingUi(false);
           }
         }, 2500);
       } catch (err) {
         stopAllTimers();
         setStatus('执行失败', 'error');
         showMessage(err.message || '执行失败', 'error');
-        el.generateBtn.disabled = false;
+        setGeneratingUi(false);
       }
     }
+
+    function stopWaitingByUser() {
+      state.stoppedByUser = true;
+      stopAllTimers();
+      setGeneratingUi(false);
+      setStatus('已停止等待', 'default');
+      showMessage(`已停止网页端等待。${state.currentTaskId ? `你当前任务 ID：${state.currentTaskId}` : ''} RunningHub 服务器中的任务可能仍在继续。`, 'default');
+    }
+
+    function openPreview(url) {
+      el.previewImage.src = url;
+      el.previewModal.classList.remove('hidden');
+      el.previewModal.classList.add('flex');
+    }
+
+    function closePreview() {
+      el.previewModal.classList.add('hidden');
+      el.previewModal.classList.remove('flex');
+      el.previewImage.src = '';
+    }
+
+    window.openPreview = openPreview;
 
     el.modelInput.addEventListener('change', e => {
       const file = e.target.files?.[0];
@@ -531,7 +625,7 @@ html = r'''<!doctype html>
       if (file) previewFile(file, 'pants', el.pantsPreview);
     });
 
-    el.onlyTop.addEventListener('change', () => {
+    el.dualMode.addEventListener('change', () => {
       saveSettings();
       refreshPantsState();
     });
@@ -548,6 +642,10 @@ html = r'''<!doctype html>
     el.workflowId.addEventListener('change', saveSettings);
     el.prompt.addEventListener('change', saveSettings);
     el.generateBtn.addEventListener('click', handleGenerate);
+    el.cancelBtn.addEventListener('click', stopWaitingByUser);
+    el.closePreviewBtn.addEventListener('click', closePreview);
+    el.previewModal.addEventListener('click', (e) => { if (e.target === el.previewModal) closePreview(); });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closePreview(); });
     el.clearHistoryBtn.addEventListener('click', () => {
       localStorage.removeItem('rh_history');
       renderHistory();
@@ -555,9 +653,9 @@ html = r'''<!doctype html>
 
     loadSettings();
     renderHistory();
+    refreshPantsState();
+    setGeneratingUi(false);
   </script>
+  
 </body>
-</html>'''
-Path('/mnt/data/runninghub_tryon_index_v2.html').write_text(html, encoding='utf-8')
-print('written')
-PY
+</html>

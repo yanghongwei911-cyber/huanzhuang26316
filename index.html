@@ -17,14 +17,14 @@
       <div>
         <div class="mb-2 inline-flex items-center gap-2 rounded-full border border-violet-500/30 bg-violet-500/10 px-3 py-1 text-xs text-violet-300">
           <span class="h-2 w-2 rounded-full bg-violet-400"></span>
-          GitHub Pages 可部署单页版
+          GitHub Pages 可部署单页版 · v9 队列版
         </div>
         <h1 class="text-2xl font-bold tracking-tight">RunningHub 换装工作流网页控制台</h1>
-        <p class="mt-2 text-sm text-slate-400">支持拖拽上传、单图模式、双件模式、取消等待、预览大图。</p>
+        <p class="mt-2 text-sm text-slate-400">支持拖拽上传、单图/双件模式、取消等待、预览大图，以及多任务自动排队串行生成。</p>
       </div>
       <div class="rounded-2xl border border-amber-500/20 bg-amber-500/10 px-4 py-3 text-sm text-amber-100 md:max-w-md">
         <div class="font-semibold">说明</div>
-        <div class="mt-1 text-amber-200/90">本版已移除“参考服装主色检测”。系统不再自动追加任何 HEX 颜色约束，完全以你上传的参考服装图和你自己写的提示词为准。</div>
+        <div class="mt-1 text-amber-200/90">本版增加“任务队列”。你可以先把多组任务加入队列，再点一次开始，系统会自动一个接一个生成。为了稳定，只做串行，不做并发。</div>
       </div>
     </header>
 
@@ -58,7 +58,7 @@
               <input id="dualMode" type="checkbox" class="h-4 w-4 accent-emerald-500" />
               <div>
                 <div class="font-medium">双件模式（上衣+裤子）</div>
-                <div class="mt-0.5 text-xs text-emerald-200/90">不勾选时为单图模式：你只需要上传一张服装图，系统会自动关闭图3，由提示词决定换上衣还是换裤子。勾选后才会同时启用上衣图和裤子图。</div>
+                <div class="mt-0.5 text-xs text-emerald-200/90">不勾选时为单图模式：只上传一张服装图，系统会自动关闭图3，由提示词决定换上衣还是换裤子。勾选后同时启用上衣图和裤子图。</div>
               </div>
             </label>
           </div>
@@ -91,16 +91,28 @@
           </div>
 
           <div class="mt-4 rounded-2xl border border-sky-500/20 bg-sky-500/10 p-3 text-xs leading-6 text-sky-100">
-            当前按你最新工作流接入：<span class="font-semibold">4 = 模特图</span>、<span class="font-semibold">11 = 图2参考图</span>、<span class="font-semibold">10 = 图3参考图</span>、<span class="font-semibold">12 = 提示词</span>。<br>
-            本版已取消自动颜色检测，不再追加“参考服装主色检测：#xxxxxx”。
+            当前按你这条工作流接入：<span class="font-semibold">4 = 模特图</span>、<span class="font-semibold">11 = 图2参考图</span>、<span class="font-semibold">10 = 图3参考图</span>、<span class="font-semibold">12 = 提示词</span>。<br>
+            本版重点增加的是多任务排队，不改变你现在这条换装逻辑。
           </div>
 
           <div class="mt-5 grid grid-cols-2 gap-3">
             <button id="generateBtn" class="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-violet-500 bg-gradient-to-r from-violet-600 to-indigo-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-violet-900/30 transition hover:from-violet-500 hover:to-indigo-500 disabled:cursor-not-allowed disabled:opacity-50">
-              开始生成
+              立即生成当前任务
+            </button>
+            <button id="addQueueBtn" class="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm font-semibold text-slate-200 transition hover:border-violet-500 hover:text-violet-200">
+              加入队列
+            </button>
+          </div>
+
+          <div class="mt-3 grid grid-cols-3 gap-3">
+            <button id="startQueueBtn" class="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-emerald-500/40 bg-emerald-500/10 px-4 py-3 text-sm font-semibold text-emerald-200 transition hover:bg-emerald-500/15 disabled:cursor-not-allowed disabled:opacity-50">
+              开始队列
             </button>
             <button id="cancelBtn" disabled class="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm font-semibold text-slate-300 transition hover:border-rose-500 hover:text-rose-200 disabled:cursor-not-allowed disabled:opacity-50">
-              取消等待
+              停止当前
+            </button>
+            <button id="clearPendingBtn" class="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm font-semibold text-slate-300 transition hover:border-slate-500">
+              清空未开始
             </button>
           </div>
         </div>
@@ -116,7 +128,7 @@
           <div class="grid grid-cols-1 gap-5 lg:grid-cols-5">
             <div class="lg:col-span-3">
               <div id="resultWrap" class="flex min-h-[520px] items-center justify-center overflow-hidden rounded-3xl border border-slate-800 bg-slate-950 p-4 text-center text-slate-500">
-                配置参数并点击“开始生成”
+                配置参数并点击“立即生成当前任务”或“加入队列”
               </div>
             </div>
 
@@ -138,6 +150,7 @@
                   <div><span class="text-slate-500">Task ID：</span><span id="taskIdText">-</span></div>
                   <div><span class="text-slate-500">队列状态：</span><span id="taskStatusText">-</span></div>
                   <div><span class="text-slate-500">运行耗时：</span><span id="taskCostTimeText">-</span></div>
+                  <div><span class="text-slate-500">队列统计：</span><span id="queueSummaryText">0 / 0</span></div>
                 </div>
               </div>
 
@@ -145,14 +158,22 @@
                 <div class="mb-3 text-xs text-slate-400">使用说明</div>
                 <ol class="list-decimal space-y-2 pl-5 text-sm leading-6 text-slate-300">
                   <li>输入 API Key。</li>
-                  <li>上传模特图。</li>
-                  <li>单图模式：上传一张服装图，由提示词决定换上衣还是换裤子。</li>
-                  <li>双件模式：上传两张服装图，分别对应图2和图3。</li>
-                  <li>支持拖拽上传，生成完成后可预览大图或下载。</li>
+                  <li>上传模特图和服装图。</li>
+                  <li>可以直接点“立即生成当前任务”。</li>
+                  <li>也可以反复改图、改提示词，每次点“加入队列”。</li>
+                  <li>最后点一次“开始队列”，系统会自动一个接一个跑完。</li>
                 </ol>
               </div>
             </div>
           </div>
+        </div>
+
+        <div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-5">
+          <div class="mb-4 flex items-center justify-between">
+            <h2 class="text-sm font-semibold text-slate-200">任务队列</h2>
+            <div class="text-xs text-slate-400">关闭网页或刷新页面后，队列中的本地数据会清空；已生成结果仍会保存在本地历史记录里。</div>
+          </div>
+          <div id="queueWrap" class="space-y-3"></div>
         </div>
 
         <div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-5">
@@ -184,6 +205,11 @@
       elapsedSeconds: 0,
       progress: 0,
       currentTaskId: null,
+      isGenerating: false,
+      queue: [],
+      queueRunning: false,
+      activeQueueId: null,
+      stopAfterCurrent: false,
     };
 
     const el = {
@@ -191,11 +217,9 @@
       workflowId: document.getElementById('workflowId'),
       prompt: document.getElementById('prompt'),
       dualMode: document.getElementById('dualMode'),
-
       modelInput: document.getElementById('modelInput'),
       topInput: document.getElementById('topInput'),
       pantsInput: document.getElementById('pantsInput'),
-
       modelPreview: document.getElementById('modelPreview'),
       topPreview: document.getElementById('topPreview'),
       pantsPreview: document.getElementById('pantsPreview'),
@@ -203,9 +227,11 @@
       modelDrop: document.getElementById('modelDrop'),
       topDrop: document.getElementById('topDrop'),
       pantsDrop: document.getElementById('pantsDrop'),
-
       generateBtn: document.getElementById('generateBtn'),
+      addQueueBtn: document.getElementById('addQueueBtn'),
+      startQueueBtn: document.getElementById('startQueueBtn'),
       cancelBtn: document.getElementById('cancelBtn'),
+      clearPendingBtn: document.getElementById('clearPendingBtn'),
       resultWrap: document.getElementById('resultWrap'),
       progressBar: document.getElementById('progressBar'),
       progressText: document.getElementById('progressText'),
@@ -214,6 +240,8 @@
       taskIdText: document.getElementById('taskIdText'),
       taskStatusText: document.getElementById('taskStatusText'),
       taskCostTimeText: document.getElementById('taskCostTimeText'),
+      queueSummaryText: document.getElementById('queueSummaryText'),
+      queueWrap: document.getElementById('queueWrap'),
       historyWrap: document.getElementById('historyWrap'),
       clearHistoryBtn: document.getElementById('clearHistoryBtn'),
       resolutionBtns: Array.from(document.querySelectorAll('.resolution-btn')),
@@ -221,6 +249,10 @@
       previewImage: document.getElementById('previewImage'),
       closePreviewBtn: document.getElementById('closePreviewBtn'),
     };
+
+    function uid() {
+      return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    }
 
     function saveSettings() {
       localStorage.setItem('rh_api_key', el.apiKey.value.trim());
@@ -251,6 +283,7 @@
         running: 'border-violet-500/30 bg-violet-500/10 text-violet-200',
         success: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-200',
         error: 'border-rose-500/30 bg-rose-500/10 text-rose-200',
+        queue: 'border-sky-500/30 bg-sky-500/10 text-sky-200',
       };
       el.statusBadge.className = `rounded-full px-3 py-1 text-xs ${tones[tone] || tones.default}`;
       el.statusBadge.textContent = label;
@@ -262,43 +295,36 @@
       el.progressText.textContent = `${state.progress}%`;
     }
 
-    function previewDataUrl(dataUrl, previewEl) {
-      previewEl.innerHTML = `<img src="${dataUrl}" alt="preview" class="h-full w-full rounded-2xl object-contain" />`;
-    }
-
-    function handleFile(file, key, previewEl) {
-      if (!file || !file.type.startsWith('image/')) return alert('请上传图片文件');
+    function previewFile(file, key, previewEl) {
       const reader = new FileReader();
       reader.onload = () => {
         state.images[key] = reader.result;
-        previewDataUrl(reader.result, previewEl);
+        previewEl.innerHTML = `<img src="${reader.result}" alt="preview" class="h-full w-full rounded-2xl object-contain" />`;
       };
       reader.readAsDataURL(file);
     }
 
-    function bindDropZone(zoneEl, inputEl, key, previewEl) {
-      inputEl.addEventListener('change', e => {
-        const file = e.target.files?.[0];
-        if (file) handleFile(file, key, previewEl);
-      });
-
-      ['dragenter', 'dragover'].forEach(evt => {
-        zoneEl.addEventListener(evt, e => {
+    function attachDropZone(dropEl, inputEl, key, previewEl) {
+      ['dragenter', 'dragover'].forEach(type => {
+        dropEl.addEventListener(type, (e) => {
           e.preventDefault();
-          zoneEl.classList.add('drop-active');
+          e.stopPropagation();
+          dropEl.classList.add('drop-active');
         });
       });
-
-      ['dragleave', 'drop'].forEach(evt => {
-        zoneEl.addEventListener(evt, e => {
+      ['dragleave', 'drop'].forEach(type => {
+        dropEl.addEventListener(type, (e) => {
           e.preventDefault();
-          zoneEl.classList.remove('drop-active');
+          e.stopPropagation();
+          dropEl.classList.remove('drop-active');
         });
       });
-
-      zoneEl.addEventListener('drop', e => {
+      dropEl.addEventListener('drop', (e) => {
         const file = e.dataTransfer?.files?.[0];
-        if (file) handleFile(file, key, previewEl);
+        if (file && file.type.startsWith('image/')) {
+          inputEl.files = e.dataTransfer.files;
+          previewFile(file, key, previewEl);
+        }
       });
     }
 
@@ -330,55 +356,83 @@
       return json.data.fileName;
     }
 
-    function normalizePrompt(prompt, mode) {
-      let text = (prompt || '').trim();
-      if (!text) return '';
-
-      if (mode === 'single') {
-        text = text.replaceAll('图3', '图2');
-      }
-
-      const lowerText = text;
-      const mentionsPants = /裤|长裤|短裤|半裙|短裙|裙子/.test(lowerText);
-      const mentionsTop = /上衣|T恤|短袖|衬衫|背心|毛衣|外套/.test(lowerText);
-
-      let tail = ' 保持人物脸部、发型、姿势、手势、构图、背景、镜头角度不变。';
-      if (mentionsPants && !mentionsTop) {
-        tail += ' 仅替换下装，未指定的上衣、鞋子、包袋与其他部分保持不变。';
-      } else if (mentionsTop && !mentionsPants) {
-        tail += ' 仅替换上衣，未指定的下装、鞋子、包袋与其他部分保持不变。';
-      } else {
-        tail += ' 未指定的服装与其他部分保持不变。';
-      }
-      tail += ' 严格参考上传服装图本身的颜色、材质、图案、版型与细节，不要自行改色，不要偏色。';
-
-      return text + tail;
+    function normalizePromptForSingleMode(prompt) {
+      return (prompt || '').replaceAll('图3', '图2');
     }
 
-    function resolveGarmentMode() {
-      const hasTop = !!state.images.top;
-      const hasPants = !!state.images.pants;
-      const dualMode = el.dualMode.checked;
+    function resolveGarmentMode(images, dualMode) {
+      const hasTop = !!images.top;
+      const hasPants = !!images.pants;
 
-      if (!hasTop && !hasPants) throw new Error('请至少上传一张服装图');
+      if (!hasTop && !hasPants) {
+        throw new Error('请至少上传一张服装图');
+      }
 
       if (dualMode) {
         if (!hasTop) throw new Error('你开启了双件模式，请先上传服装图1');
         if (!hasPants) throw new Error('你开启了双件模式，请先上传服装图2');
-        return { mode: 'dual', image2Data: state.images.top, image3Data: state.images.pants };
+        return {
+          mode: 'dual',
+          image2Data: images.top,
+          image3Data: images.pants,
+        };
       }
 
-      return { mode: 'single', image2Data: state.images.top || state.images.pants, image3Data: TRANSPARENT_PNG_DATA_URL };
+      return {
+        mode: 'single',
+        image2Data: images.top || images.pants,
+        image3Data: TRANSPARENT_PNG_DATA_URL,
+      };
     }
 
-    async function runWorkflow({ apiKey, workflowId, prompt, modelFileName, image2FileName, image3FileName }) {
+    function buildTaskFromCurrentForm() {
+      const apiKey = el.apiKey.value.trim();
+      const workflowId = el.workflowId.value.trim();
+      let prompt = el.prompt.value.trim();
+
+      if (!apiKey) throw new Error('请先输入 API Key');
+      if (!workflowId) throw new Error('请先输入工作流 ID');
+      if (!state.images.model) throw new Error('请先上传模特图');
+      if (!prompt) throw new Error('请先输入提示词');
+
+      const garmentConfig = resolveGarmentMode(state.images, el.dualMode.checked);
+      if (garmentConfig.mode === 'single') {
+        prompt = normalizePromptForSingleMode(prompt);
+      }
+
+      return {
+        id: uid(),
+        apiKey,
+        workflowId,
+        prompt,
+        dualMode: el.dualMode.checked,
+        resolution: state.resolution,
+        images: {
+          model: state.images.model,
+          top: garmentConfig.image2Data,
+          pants: garmentConfig.image3Data,
+        },
+        sourceThumbs: {
+          model: state.images.model,
+          top: state.images.top || state.images.pants,
+          pants: el.dualMode.checked ? state.images.pants : null,
+        },
+        status: 'queued',
+        createdAt: new Date().toLocaleString('zh-CN'),
+        taskId: '',
+        resultUrl: '',
+        errorMessage: '',
+      };
+    }
+
+    async function runWorkflow({ apiKey, workflowId, prompt, modelFileName, topFileName, pantsFileName, resolution }) {
       const payload = {
         addMetadata: true,
         nodeInfoList: [
           { nodeId: '4', fieldName: 'image', fieldValue: modelFileName },
-          { nodeId: '11', fieldName: 'image', fieldValue: image2FileName },
-          { nodeId: '10', fieldName: 'image', fieldValue: image3FileName },
-          { nodeId: '8', fieldName: 'resolution', fieldValue: state.resolution },
+          { nodeId: '11', fieldName: 'image', fieldValue: topFileName },
+          { nodeId: '10', fieldName: 'image', fieldValue: pantsFileName },
+          { nodeId: '8', fieldName: 'resolution', fieldValue: resolution },
           { nodeId: '12', fieldName: 'text', fieldValue: prompt },
         ],
         instanceType: 'default',
@@ -396,7 +450,9 @@
 
       const json = await res.json();
       const taskId = json.taskId || json.data?.taskId;
-      if (!res.ok || !taskId) throw new Error(json.errorMessage || json.msg || '工作流提交失败');
+      if (!res.ok || !taskId) {
+        throw new Error(json.errorMessage || json.msg || '工作流提交失败');
+      }
       return json;
     }
 
@@ -432,8 +488,21 @@
     }
 
     function setGeneratingUi(isGenerating) {
+      state.isGenerating = isGenerating;
       el.generateBtn.disabled = isGenerating;
+      el.addQueueBtn.disabled = isGenerating;
+      el.startQueueBtn.disabled = isGenerating || !state.queue.some(item => item.status === 'queued' || item.status === 'failed');
       el.cancelBtn.disabled = !isGenerating;
+      el.clearPendingBtn.disabled = isGenerating && !state.stopAfterCurrent;
+    }
+
+    function escapeHtml(str = '') {
+      return str
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
     }
 
     function saveHistory(item) {
@@ -462,7 +531,7 @@
       `).join('');
     }
 
-    function showResultImage(url) {
+    function showResultImage(url, queueLabel = '') {
       el.resultWrap.innerHTML = `
         <div class="w-full">
           <button onclick="openPreview('${url}')" class="block w-full">
@@ -473,22 +542,14 @@
             <a href="${url}" target="_blank" rel="noreferrer" class="rounded-2xl border border-slate-700 bg-slate-900 px-4 py-2 text-sm text-slate-200">打开原图</a>
             <a href="${url}" download class="rounded-2xl border border-slate-700 bg-slate-900 px-4 py-2 text-sm text-slate-200">下载图片</a>
           </div>
+          ${queueLabel ? `<div class="mt-3 text-xs text-slate-400">${queueLabel}</div>` : ''}
         </div>
       `;
     }
 
     function showMessage(msg, tone = 'default') {
-      const color = tone === 'error' ? 'text-rose-300' : tone === 'running' ? 'text-violet-300' : 'text-slate-400';
+      const color = tone === 'error' ? 'text-rose-300' : tone === 'running' ? 'text-violet-300' : tone === 'queue' ? 'text-sky-300' : 'text-slate-400';
       el.resultWrap.innerHTML = `<div class="px-6 text-center text-sm ${color}">${escapeHtml(msg)}</div>`;
-    }
-
-    function escapeHtml(str = '') {
-      return str
-        .replaceAll('&', '&amp;')
-        .replaceAll('<', '&lt;')
-        .replaceAll('>', '&gt;')
-        .replaceAll('"', '&quot;')
-        .replaceAll("'", '&#039;');
     }
 
     function paintResolutionButtons() {
@@ -504,118 +565,277 @@
       const dualMode = el.dualMode.checked;
       el.pantsInput.disabled = !dualMode;
       el.pantsBlock.classList.toggle('opacity-60', !dualMode);
-      if (!dualMode && !state.images.pants) {
-        el.pantsPreview.innerHTML = '<div class="px-4 text-center text-sm text-slate-500">当前为单图模式：图3会自动关闭。你可以把裤子图直接上传到服装图1。</div>';
-      }
-      if (dualMode && !state.images.pants) {
-        el.pantsPreview.innerHTML = '<div class="px-4 text-center text-sm text-slate-500">当前为双件模式，请上传服装图2。</div>';
+      if (!dualMode) {
+        if (!state.images.pants) {
+          el.pantsPreview.innerHTML = '<div class="px-4 text-center text-sm text-slate-500">当前为单图模式：图3会自动关闭。你可以把裤子图直接上传到服装图1，也可以只上传上衣图。</div>';
+        }
+      } else if (!state.images.pants) {
+        el.pantsPreview.innerHTML = '<div class="px-4 text-center text-sm text-slate-500">当前为双件模式，请在这里上传服装图2。</div>';
       }
     }
 
-    async function handleGenerate() {
-      const apiKey = el.apiKey.value.trim();
-      const workflowId = el.workflowId.value.trim();
-      const prompt = el.prompt.value.trim();
-      if (!apiKey) return alert('请先输入 API Key');
-      if (!workflowId) return alert('请先输入工作流 ID');
-      if (!state.images.model) return alert('请先上传模特图');
-      if (!prompt) return alert('请先输入提示词');
+    function renderQueue() {
+      const total = state.queue.length;
+      const done = state.queue.filter(item => item.status === 'success' || item.status === 'failed' || item.status === 'stopped').length;
+      el.queueSummaryText.textContent = `${done} / ${total}`;
 
-      let garmentConfig;
-      try {
-        garmentConfig = resolveGarmentMode();
-      } catch (err) {
-        return alert(err.message || '请检查服装图上传状态');
+      if (!total) {
+        el.queueWrap.innerHTML = '<div class="rounded-2xl border border-slate-800 bg-slate-950 p-6 text-center text-sm text-slate-500">队列还是空的。先配置一组任务，然后点“加入队列”。</div>';
+        setGeneratingUi(state.isGenerating);
+        return;
       }
 
-      saveSettings();
+      const toneMap = {
+        queued: 'border-slate-700 text-slate-300 bg-slate-950',
+        uploading: 'border-sky-500/30 text-sky-200 bg-sky-500/10',
+        running: 'border-violet-500/30 text-violet-200 bg-violet-500/10',
+        success: 'border-emerald-500/30 text-emerald-200 bg-emerald-500/10',
+        failed: 'border-rose-500/30 text-rose-200 bg-rose-500/10',
+        stopped: 'border-amber-500/30 text-amber-200 bg-amber-500/10',
+      };
+      const labelMap = {
+        queued: '等待中',
+        uploading: '上传中',
+        running: '生成中',
+        success: '成功',
+        failed: '失败',
+        stopped: '已停止',
+      };
+
+      el.queueWrap.innerHTML = state.queue.map((item, index) => `
+        <div class="rounded-2xl border ${toneMap[item.status] || toneMap.queued} p-4">
+          <div class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+            <div class="flex gap-3">
+              <img src="${item.sourceThumbs.model}" alt="thumb" class="h-24 w-20 rounded-xl object-cover" />
+              <div class="space-y-1">
+                <div class="text-sm font-semibold">任务 ${index + 1}</div>
+                <div class="text-xs opacity-80">${item.dualMode ? '双件模式' : '单图模式'} · ${item.resolution.toUpperCase()}</div>
+                <div class="line-clamp-2 text-xs opacity-80">${escapeHtml(item.prompt)}</div>
+                <div class="text-[11px] opacity-70">加入时间：${item.createdAt}</div>
+                ${item.taskId ? `<div class="text-[11px] opacity-70">Task ID：${item.taskId}</div>` : ''}
+                ${item.errorMessage ? `<div class="text-[11px] text-rose-300">${escapeHtml(item.errorMessage)}</div>` : ''}
+              </div>
+            </div>
+            <div class="flex flex-col items-start gap-2 md:items-end">
+              <div class="rounded-full border px-3 py-1 text-xs">${labelMap[item.status] || item.status}</div>
+              ${item.resultUrl ? `<button onclick="openPreview('${item.resultUrl}')" class="rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-slate-200">查看结果</button>` : ''}
+              ${(item.status === 'queued' || item.status === 'failed') && !state.queueRunning ? `<button onclick="removeQueueItem('${item.id}')" class="rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-slate-200">移除</button>` : ''}
+            </div>
+          </div>
+        </div>
+      `).join('');
+      setGeneratingUi(state.isGenerating);
+    }
+
+    function addCurrentTaskToQueue() {
+      try {
+        saveSettings();
+        const task = buildTaskFromCurrentForm();
+        state.queue.push(task);
+        renderQueue();
+        setStatus('已加入队列', 'queue');
+        showMessage(`任务已加入队列，当前共有 ${state.queue.length} 个任务。`, 'queue');
+      } catch (err) {
+        alert(err.message || '加入队列失败');
+      }
+    }
+
+    function removeQueueItem(taskId) {
+      state.queue = state.queue.filter(item => item.id !== taskId);
+      renderQueue();
+    }
+    window.removeQueueItem = removeQueueItem;
+
+    function clearPendingTasks() {
+      state.queue = state.queue.filter(item => !['queued', 'failed'].includes(item.status));
+      renderQueue();
+    }
+
+    function findNextQueueTask() {
+      return state.queue.find(item => item.status === 'queued' || item.status === 'failed');
+    }
+
+    async function executeTask(task, queueIndexLabel = '') {
       state.currentTaskId = null;
       setGeneratingUi(true);
-      setStatus('上传图片中', 'running');
-      showMessage(`正在上传图片并提交工作流，请稍候… 当前模式：${garmentConfig.mode === 'dual' ? '双件模式' : '单图模式'}。`, 'running');
       setProgress(8);
       startElapsedTimer();
       el.taskIdText.textContent = '-';
       el.taskStatusText.textContent = 'UPLOADING';
       el.taskCostTimeText.textContent = '-';
 
+      task.status = 'uploading';
+      renderQueue();
+      setStatus(queueIndexLabel ? `队列执行中 ${queueIndexLabel}` : '上传图片中', 'running');
+      showMessage(`正在上传图片并提交工作流… ${queueIndexLabel}`, 'running');
+
       try {
-        const [modelFileName, image2FileName, image3FileName] = await Promise.all([
-          uploadImage(state.images.model, apiKey, `model-${Date.now()}.png`),
-          uploadImage(garmentConfig.image2Data, apiKey, `image2-${Date.now()}.png`),
-          uploadImage(garmentConfig.image3Data, apiKey, garmentConfig.mode === 'dual' ? `image3-${Date.now()}.png` : `blank-image3-${Date.now()}.png`),
+        const [modelFileName, topFileName, pantsFileName] = await Promise.all([
+          uploadImage(task.images.model, task.apiKey, `model-${Date.now()}.png`),
+          uploadImage(task.images.top, task.apiKey, `image2-${Date.now()}.png`),
+          uploadImage(task.images.pants, task.apiKey, `image3-${Date.now()}.png`),
         ]);
 
-        setStatus('提交任务中', 'running');
         setProgress(18);
+        const runResult = await runWorkflow({
+          apiKey: task.apiKey,
+          workflowId: task.workflowId,
+          prompt: task.prompt,
+          modelFileName,
+          topFileName,
+          pantsFileName,
+          resolution: task.resolution,
+        });
 
-        const finalPrompt = normalizePrompt(prompt, garmentConfig.mode);
-        const runResult = await runWorkflow({ apiKey, workflowId, prompt: finalPrompt, modelFileName, image2FileName, image3FileName });
         const taskId = runResult.taskId || runResult.data?.taskId;
+        task.taskId = taskId;
         state.currentTaskId = taskId;
+        task.status = 'running';
         el.taskIdText.textContent = taskId;
         el.taskStatusText.textContent = runResult.status || '-';
-        setStatus('任务已提交', 'running');
-        showMessage('任务已提交，正在轮询结果…', 'running');
         setProgress(26);
+        renderQueue();
 
-        state.pollTimer = setInterval(async () => {
-          try {
-            const query = await queryTask(taskId, apiKey);
-            const status = query.status || query.data?.status || '-';
-            const resultUrl = query.results?.[0]?.url || query.data?.results?.[0]?.url || '';
-            const taskCostTime = query.usage?.taskCostTime || query.data?.usage?.taskCostTime || '-';
+        await new Promise((resolve, reject) => {
+          state.pollTimer = setInterval(async () => {
+            try {
+              const query = await queryTask(taskId, task.apiKey);
+              const status = query.status || query.data?.status || '-';
+              const resultUrl = query.results?.[0]?.url || query.data?.results?.[0]?.url || '';
+              const taskCostTime = query.usage?.taskCostTime || query.data?.usage?.taskCostTime || '-';
+              el.taskStatusText.textContent = status;
+              el.taskCostTimeText.textContent = taskCostTime;
 
-            el.taskStatusText.textContent = status;
-            el.taskCostTimeText.textContent = taskCostTime;
+              if (status === 'QUEUED') {
+                setStatus(queueIndexLabel ? `队列排队中 ${queueIndexLabel}` : '排队中', 'running');
+                setProgress(Math.max(state.progress, 30));
+                return;
+              }
 
-            if (status === 'QUEUED') {
-              setStatus('排队中', 'running');
-              setProgress(Math.max(state.progress, 30));
-              return;
-            }
-            if (status === 'RUNNING') {
-              setStatus('生成中', 'running');
-              setProgress(Math.min(95, state.progress + 8));
-              return;
-            }
-            if (status === 'SUCCESS') {
+              if (status === 'RUNNING') {
+                setStatus(queueIndexLabel ? `队列生成中 ${queueIndexLabel}` : '生成中', 'running');
+                setProgress(Math.min(95, state.progress + 8));
+                return;
+              }
+
               stopAllTimers();
-              setStatus('生成成功', 'success');
-              setProgress(100);
-              if (!resultUrl) throw new Error('任务成功，但没有解析到结果图片 URL');
-              showResultImage(resultUrl);
-              saveHistory({ url: resultUrl, prompt, time: new Date().toLocaleString('zh-CN') });
-              setGeneratingUi(false);
-              return;
-            }
-            if (status === 'FAILED') {
+
+              if (status === 'SUCCESS') {
+                if (!resultUrl) throw new Error('任务成功，但没有解析到结果图片 URL');
+                task.status = 'success';
+                task.resultUrl = resultUrl;
+                task.errorMessage = '';
+                setStatus(queueIndexLabel ? `队列成功 ${queueIndexLabel}` : '生成成功', 'success');
+                setProgress(100);
+                showResultImage(resultUrl, queueIndexLabel ? `刚完成：${queueIndexLabel}` : '');
+                saveHistory({ url: resultUrl, prompt: task.prompt, time: new Date().toLocaleString('zh-CN') });
+                renderQueue();
+                resolve();
+                return;
+              }
+
+              if (status === 'FAILED') {
+                task.status = 'failed';
+                task.errorMessage = query.errorMessage || query.data?.errorMessage || '任务失败';
+                setStatus(queueIndexLabel ? `队列失败 ${queueIndexLabel}` : '生成失败', 'error');
+                setProgress(100);
+                showMessage(task.errorMessage, 'error');
+                renderQueue();
+                resolve();
+              }
+            } catch (err) {
               stopAllTimers();
-              setStatus('生成失败', 'error');
-              setProgress(100);
-              showMessage(query.errorMessage || query.data?.errorMessage || '任务失败', 'error');
-              setGeneratingUi(false);
+              task.status = 'failed';
+              task.errorMessage = err.message || '查询任务失败';
+              setStatus(queueIndexLabel ? `队列失败 ${queueIndexLabel}` : '查询失败', 'error');
+              showMessage(task.errorMessage, 'error');
+              renderQueue();
+              resolve();
             }
-          } catch (err) {
-            stopAllTimers();
-            setStatus('查询失败', 'error');
-            showMessage(err.message || '查询任务失败', 'error');
-            setGeneratingUi(false);
-          }
-        }, 2500);
+          }, 2500);
+        });
       } catch (err) {
         stopAllTimers();
-        setStatus('执行失败', 'error');
-        showMessage(err.message || '执行失败', 'error');
-        setGeneratingUi(false);
+        task.status = 'failed';
+        task.errorMessage = err.message || '执行失败';
+        setStatus(queueIndexLabel ? `队列失败 ${queueIndexLabel}` : '执行失败', 'error');
+        showMessage(task.errorMessage, 'error');
+        renderQueue();
       }
     }
 
-    function stopWaitingByUser() {
-      stopAllTimers();
+    async function processQueue() {
+      if (state.queueRunning || state.isGenerating) return;
+      const hasPending = !!findNextQueueTask();
+      if (!hasPending) {
+        alert('队列里没有待执行任务');
+        return;
+      }
+
+      state.queueRunning = true;
+      state.stopAfterCurrent = false;
+      setStatus('队列启动', 'queue');
+      showMessage('队列已启动，系统会自动一个接一个生成。', 'queue');
+
+      while (state.queueRunning) {
+        const nextTask = findNextQueueTask();
+        if (!nextTask) break;
+        state.activeQueueId = nextTask.id;
+        const index = state.queue.findIndex(item => item.id === nextTask.id);
+        await executeTask(nextTask, `第 ${index + 1} 个任务`);
+        if (state.stopAfterCurrent) {
+          break;
+        }
+      }
+
+      state.activeQueueId = null;
+      state.queueRunning = false;
+      state.stopAfterCurrent = false;
       setGeneratingUi(false);
+      renderQueue();
+      const stillPending = !!findNextQueueTask();
+      if (stillPending) {
+        setStatus('队列已暂停', 'default');
+        showMessage('当前任务已停止，未开始的任务仍保留在队列里。', 'default');
+      } else {
+        setStatus('队列已完成', 'success');
+        showMessage('队列已执行完成。', 'default');
+      }
+    }
+
+    async function handleGenerate() {
+      if (state.queueRunning || state.isGenerating) return;
+      try {
+        saveSettings();
+        const task = buildTaskFromCurrentForm();
+        await executeTask(task, '当前任务');
+      } catch (err) {
+        alert(err.message || '执行失败');
+      } finally {
+        setGeneratingUi(false);
+        renderQueue();
+      }
+    }
+
+    function stopCurrentTask() {
+      if (!state.isGenerating) return;
+      state.stopAfterCurrent = true;
+      stopAllTimers();
+
+      if (state.activeQueueId) {
+        const active = state.queue.find(item => item.id === state.activeQueueId);
+        if (active && (active.status === 'uploading' || active.status === 'running')) {
+          active.status = 'stopped';
+          active.errorMessage = '用户手动停止等待';
+        }
+      }
+      renderQueue();
       setStatus('已停止等待', 'default');
-      showMessage(`已停止网页端等待。${state.currentTaskId ? `你当前任务 ID：${state.currentTaskId}` : ''} RunningHub 服务器中的任务可能仍在继续。`, 'default');
+      showMessage(`已停止网页端等待。${state.currentTaskId ? `当前 Task ID：${state.currentTaskId}。` : ''} RunningHub 服务器里的任务可能仍在继续；队列不会自动接着跑。`, 'default');
+      state.queueRunning = false;
+      state.activeQueueId = null;
+      state.isGenerating = false;
+      setGeneratingUi(false);
     }
 
     function openPreview(url) {
@@ -623,34 +843,61 @@
       el.previewModal.classList.remove('hidden');
       el.previewModal.classList.add('flex');
     }
-
     function closePreview() {
       el.previewModal.classList.add('hidden');
       el.previewModal.classList.remove('flex');
       el.previewImage.src = '';
     }
-
     window.openPreview = openPreview;
 
-    bindDropZone(el.modelDrop, el.modelInput, 'model', el.modelPreview);
-    bindDropZone(el.topDrop, el.topInput, 'top', el.topPreview);
-    bindDropZone(el.pantsDrop, el.pantsInput, 'pants', el.pantsPreview);
+    el.modelInput.addEventListener('change', e => {
+      const file = e.target.files?.[0];
+      if (file) previewFile(file, 'model', el.modelPreview);
+    });
+    el.topInput.addEventListener('change', e => {
+      const file = e.target.files?.[0];
+      if (file) previewFile(file, 'top', el.topPreview);
+    });
+    el.pantsInput.addEventListener('change', e => {
+      const file = e.target.files?.[0];
+      if (file) previewFile(file, 'pants', el.pantsPreview);
+    });
 
-    el.dualMode.addEventListener('change', () => { saveSettings(); refreshPantsState(); });
-    el.resolutionBtns.forEach(btn => btn.addEventListener('click', () => { state.resolution = btn.dataset.resolution; paintResolutionButtons(); saveSettings(); }));
+    attachDropZone(el.modelDrop, el.modelInput, 'model', el.modelPreview);
+    attachDropZone(el.topDrop, el.topInput, 'top', el.topPreview);
+    attachDropZone(el.pantsDrop, el.pantsInput, 'pants', el.pantsPreview);
+
+    el.dualMode.addEventListener('change', () => {
+      saveSettings();
+      refreshPantsState();
+    });
+    el.resolutionBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        state.resolution = btn.dataset.resolution;
+        paintResolutionButtons();
+        saveSettings();
+      });
+    });
     el.apiKey.addEventListener('change', saveSettings);
     el.workflowId.addEventListener('change', saveSettings);
     el.prompt.addEventListener('change', saveSettings);
     el.generateBtn.addEventListener('click', handleGenerate);
-    el.cancelBtn.addEventListener('click', stopWaitingByUser);
+    el.addQueueBtn.addEventListener('click', addCurrentTaskToQueue);
+    el.startQueueBtn.addEventListener('click', processQueue);
+    el.cancelBtn.addEventListener('click', stopCurrentTask);
+    el.clearPendingBtn.addEventListener('click', clearPendingTasks);
     el.closePreviewBtn.addEventListener('click', closePreview);
     el.previewModal.addEventListener('click', (e) => { if (e.target === el.previewModal) closePreview(); });
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closePreview(); });
-    el.clearHistoryBtn.addEventListener('click', () => { localStorage.removeItem('rh_history'); renderHistory(); });
+    el.clearHistoryBtn.addEventListener('click', () => {
+      localStorage.removeItem('rh_history');
+      renderHistory();
+    });
 
     loadSettings();
     renderHistory();
     refreshPantsState();
+    renderQueue();
     setGeneratingUi(false);
   </script>
 </body>

@@ -8,7 +8,7 @@
   <style>
     body { font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
     .glass { backdrop-filter: blur(12px); }
-    .drop-active { border-color: rgb(139 92 246) !important; box-shadow: 0 0 0 3px rgba(139,92,246,.18) inset; }
+    .drop-active { border-color: rgb(139 92 246) !important; background: rgba(139,92,246,.08) !important; }
   </style>
 </head>
 <body class="min-h-screen bg-slate-950 text-slate-100">
@@ -20,11 +20,11 @@
           GitHub Pages 可部署单页版
         </div>
         <h1 class="text-2xl font-bold tracking-tight">RunningHub 换装工作流网页控制台</h1>
-        <p class="mt-2 text-sm text-slate-400">支持单图模式与双件模式，新增拖拽上传，并强化了颜色与姿势锁定提示。</p>
+        <p class="mt-2 text-sm text-slate-400">支持拖拽上传、单图模式、双件模式、取消等待、预览大图。</p>
       </div>
       <div class="rounded-2xl border border-amber-500/20 bg-amber-500/10 px-4 py-3 text-sm text-amber-100 md:max-w-md">
-        <div class="font-semibold">安全提醒</div>
-        <div class="mt-1 text-amber-200/90">前端网页不要内置 API Key。请每次手动输入，或只在私有页面使用。</div>
+        <div class="font-semibold">说明</div>
+        <div class="mt-1 text-amber-200/90">本版已移除“参考服装主色检测”。系统不再自动追加任何 HEX 颜色约束，完全以你上传的参考服装图和你自己写的提示词为准。</div>
       </div>
     </header>
 
@@ -43,44 +43,24 @@
             </div>
             <div>
               <label class="mb-1 block text-xs text-slate-400">提示词</label>
-              <textarea id="prompt" rows="4" class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm outline-none transition focus:border-violet-500">让图1中的女模特穿上图2中的裤子，需确保衣服的一致性。</textarea>
+              <textarea id="prompt" rows="4" class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm outline-none transition focus:border-violet-500">让图1中的女模特穿上图2中的上衣，需确保衣服的一致性。</textarea>
             </div>
             <div>
               <label class="mb-1 block text-xs text-slate-400">输出分辨率</label>
-              <div class="grid grid-cols-4 gap-2" id="resolutionWrap">
+              <div class="grid grid-cols-4 gap-2">
                 <button data-resolution="1k" class="resolution-btn rounded-2xl border border-slate-700 bg-slate-950 px-3 py-2 text-xs">1K</button>
                 <button data-resolution="2k" class="resolution-btn rounded-2xl border border-violet-500 bg-violet-600 px-3 py-2 text-xs text-white">2K</button>
                 <button data-resolution="4k" class="resolution-btn rounded-2xl border border-slate-700 bg-slate-950 px-3 py-2 text-xs">4K</button>
                 <button data-resolution="8k" class="resolution-btn rounded-2xl border border-slate-700 bg-slate-950 px-3 py-2 text-xs">8K</button>
               </div>
             </div>
-
-            <div class="space-y-3 rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-4">
-              <label class="flex cursor-pointer items-start gap-3 text-sm text-emerald-100">
-                <input id="dualMode" type="checkbox" class="mt-1 h-4 w-4 accent-emerald-500" />
-                <div>
-                  <div class="font-medium">双件模式（上衣+裤子）</div>
-                  <div class="mt-0.5 text-xs text-emerald-200/90">不勾选时为单图模式：你只需要上传一张服装图，系统会自动关闭图3，提示词决定是换上衣还是换裤子。</div>
-                </div>
-              </label>
-              <label class="flex cursor-pointer items-center gap-3 text-sm text-emerald-100">
-                <input id="lockPose" type="checkbox" checked class="h-4 w-4 accent-emerald-500" />
-                <span>锁定人物动作、姿势、构图与背景不变</span>
-              </label>
-              <label class="flex cursor-pointer items-center gap-3 text-sm text-emerald-100">
-                <input id="lockColor" type="checkbox" checked class="h-4 w-4 accent-emerald-500" />
-                <span>强化服装颜色、材质、版型一致性</span>
-              </label>
-              <label class="flex cursor-pointer items-center gap-3 text-sm text-emerald-100">
-                <input id="lockOtherParts" type="checkbox" checked class="h-4 w-4 accent-emerald-500" />
-                <span>锁定未指定服装不变</span>
-              </label>
-            </div>
-
-            <div class="rounded-2xl border border-sky-500/20 bg-sky-500/10 p-3 text-xs leading-6 text-sky-100">
-              已优化：单图模式会自动把提示词中的 <span class="font-semibold">图3</span> 纠正为 <span class="font-semibold">图2</span>，避免你只上传一张服装图时模型理解错位。<br>
-              参考服装主色检测：<span id="colorHintText" class="font-semibold">未检测</span>
-            </div>
+            <label class="flex cursor-pointer items-center gap-3 rounded-2xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-100">
+              <input id="dualMode" type="checkbox" class="h-4 w-4 accent-emerald-500" />
+              <div>
+                <div class="font-medium">双件模式（上衣+裤子）</div>
+                <div class="mt-0.5 text-xs text-emerald-200/90">不勾选时为单图模式：你只需要上传一张服装图，系统会自动关闭图3，由提示词决定换上衣还是换裤子。勾选后才会同时启用上衣图和裤子图。</div>
+              </div>
+            </label>
           </div>
         </div>
 
@@ -88,31 +68,31 @@
           <h2 class="mb-4 text-sm font-semibold text-violet-300">素材上传</h2>
           <div class="space-y-4">
             <div>
-              <label class="mb-2 block text-xs text-slate-400">模特原图（节点 4 / Image1）</label>
-              <label id="modelDropzone" class="dropzone block cursor-pointer rounded-3xl border border-dashed border-slate-700 bg-slate-950 p-4 transition hover:border-violet-500" data-input="modelInput" data-preview="modelPreview">
+              <label class="mb-2 block text-xs text-slate-400">模特原图（节点4 / Image1）</label>
+              <label id="modelDrop" class="drop-zone block cursor-pointer rounded-3xl border border-dashed border-slate-700 bg-slate-950 p-4 transition hover:border-violet-500">
                 <input id="modelInput" type="file" accept="image/*" class="hidden" />
-                <div id="modelPreview" class="flex min-h-[170px] items-center justify-center overflow-hidden rounded-2xl bg-slate-900 px-4 text-center text-sm text-slate-500">点击上传，或把模特图拖进来</div>
+                <div id="modelPreview" class="flex min-h-[170px] items-center justify-center overflow-hidden rounded-2xl bg-slate-900 text-center text-sm text-slate-500">点击上传或直接拖拽模特图到这里</div>
               </label>
             </div>
             <div>
-              <label class="mb-2 block text-xs text-slate-400">服装图1（节点 11 / Image2）</label>
-              <label id="topDropzone" class="dropzone block cursor-pointer rounded-3xl border border-dashed border-slate-700 bg-slate-950 p-4 transition hover:border-violet-500" data-input="topInput" data-preview="topPreview">
+              <label class="mb-2 block text-xs text-slate-400">服装图1（节点11 / Image2）</label>
+              <label id="topDrop" class="drop-zone block cursor-pointer rounded-3xl border border-dashed border-slate-700 bg-slate-950 p-4 transition hover:border-violet-500">
                 <input id="topInput" type="file" accept="image/*" class="hidden" />
-                <div id="topPreview" class="flex min-h-[170px] items-center justify-center overflow-hidden rounded-2xl bg-slate-900 px-4 text-center text-sm text-slate-500">点击上传，或把服装图拖进来</div>
+                <div id="topPreview" class="flex min-h-[170px] items-center justify-center overflow-hidden rounded-2xl bg-slate-900 text-center text-sm text-slate-500">点击上传或直接拖拽服装图1到这里</div>
               </label>
             </div>
             <div id="pantsBlock">
-              <label class="mb-2 block text-xs text-slate-400">服装图2（节点 10 / Image3，双件模式时使用）</label>
-              <label id="pantsDropzone" class="dropzone block cursor-pointer rounded-3xl border border-dashed border-slate-700 bg-slate-950 p-4 transition hover:border-violet-500" data-input="pantsInput" data-preview="pantsPreview">
+              <label class="mb-2 block text-xs text-slate-400">服装图2（节点10 / Image3，双件模式时使用）</label>
+              <label id="pantsDrop" class="drop-zone block cursor-pointer rounded-3xl border border-dashed border-slate-700 bg-slate-950 p-4 transition hover:border-violet-500">
                 <input id="pantsInput" type="file" accept="image/*" class="hidden" />
-                <div id="pantsPreview" class="flex min-h-[170px] items-center justify-center overflow-hidden rounded-2xl bg-slate-900 px-4 text-center text-sm text-slate-500">双件模式时可上传第二张服装图，也支持拖拽</div>
+                <div id="pantsPreview" class="flex min-h-[170px] items-center justify-center overflow-hidden rounded-2xl bg-slate-900 text-center text-sm text-slate-500">点击上传或直接拖拽服装图2到这里</div>
               </label>
             </div>
           </div>
 
           <div class="mt-4 rounded-2xl border border-sky-500/20 bg-sky-500/10 p-3 text-xs leading-6 text-sky-100">
-            当前工作流接入：<span class="font-semibold">4 = 模特图</span>、<span class="font-semibold">11 = 图2参考图</span>、<span class="font-semibold">10 = 图3参考图</span>、<span class="font-semibold">12 = 提示词</span>。<br>
-            单图模式下，系统会把你上传的唯一服装图送进图2，并给图3传透明占位图；双件模式下，服装图1走图2，服装图2走图3。
+            当前按你最新工作流接入：<span class="font-semibold">4 = 模特图</span>、<span class="font-semibold">11 = 图2参考图</span>、<span class="font-semibold">10 = 图3参考图</span>、<span class="font-semibold">12 = 提示词</span>。<br>
+            本版已取消自动颜色检测，不再追加“参考服装主色检测：#xxxxxx”。
           </div>
 
           <div class="mt-5 grid grid-cols-2 gap-3">
@@ -165,10 +145,10 @@
                 <div class="mb-3 text-xs text-slate-400">使用说明</div>
                 <ol class="list-decimal space-y-2 pl-5 text-sm leading-6 text-slate-300">
                   <li>输入 API Key。</li>
-                  <li>上传模特图与服装图，支持拖拽上传。</li>
-                  <li>单图模式只上传一张服装图，提示词决定换上衣还是换裤子。</li>
-                  <li>双件模式可同时上传上衣图和裤子图。</li>
-                  <li>成功后可预览大图或下载。</li>
+                  <li>上传模特图。</li>
+                  <li>单图模式：上传一张服装图，由提示词决定换上衣还是换裤子。</li>
+                  <li>双件模式：上传两张服装图，分别对应图2和图3。</li>
+                  <li>支持拖拽上传，生成完成后可预览大图或下载。</li>
                 </ol>
               </div>
             </div>
@@ -187,17 +167,14 @@
   </div>
 
   <div id="previewModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/80 p-4">
-    <div class="relative w-full max-w-5xl rounded-3xl border border-slate-700 bg-slate-950 p-4 shadow-2xl">
+    <div class="relative w-full max-w-5xl rounded-3xl border border-slate-700 bg-slate-950 p-4">
       <button id="closePreviewBtn" class="absolute right-4 top-4 rounded-full border border-slate-700 bg-slate-900 px-3 py-1 text-sm text-slate-200">关闭</button>
-      <div class="mb-3 pr-16 text-sm text-slate-300">结果预览</div>
-      <div class="flex max-h-[80vh] items-center justify-center overflow-auto rounded-2xl bg-slate-900 p-3">
-        <img id="previewModalImg" src="" alt="preview" class="max-h-[75vh] w-auto max-w-full rounded-2xl object-contain" />
-      </div>
+      <img id="previewImage" src="" alt="preview" class="max-h-[82vh] w-full rounded-2xl object-contain" />
     </div>
   </div>
 
   <script>
-    const TRANSPARENT_PNG_DATA_URL = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Wn1n4cAAAAASUVORK5CYII=';
+    const TRANSPARENT_PNG_DATA_URL = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9WnXcRkAAAAASUVORK5CYII=';
 
     const state = {
       resolution: '2k',
@@ -207,11 +184,6 @@
       elapsedSeconds: 0,
       progress: 0,
       currentTaskId: null,
-      stoppedByUser: false,
-      latestResultUrl: '',
-      dominantColorHex: '',
-      topColorHex: '',
-      pantsColorHex: '',
     };
 
     const el = {
@@ -219,17 +191,19 @@
       workflowId: document.getElementById('workflowId'),
       prompt: document.getElementById('prompt'),
       dualMode: document.getElementById('dualMode'),
-      lockPose: document.getElementById('lockPose'),
-      lockColor: document.getElementById('lockColor'),
-      lockOtherParts: document.getElementById('lockOtherParts'),
-      colorHintText: document.getElementById('colorHintText'),
+
       modelInput: document.getElementById('modelInput'),
       topInput: document.getElementById('topInput'),
       pantsInput: document.getElementById('pantsInput'),
+
       modelPreview: document.getElementById('modelPreview'),
       topPreview: document.getElementById('topPreview'),
       pantsPreview: document.getElementById('pantsPreview'),
       pantsBlock: document.getElementById('pantsBlock'),
+      modelDrop: document.getElementById('modelDrop'),
+      topDrop: document.getElementById('topDrop'),
+      pantsDrop: document.getElementById('pantsDrop'),
+
       generateBtn: document.getElementById('generateBtn'),
       cancelBtn: document.getElementById('cancelBtn'),
       resultWrap: document.getElementById('resultWrap'),
@@ -242,11 +216,10 @@
       taskCostTimeText: document.getElementById('taskCostTimeText'),
       historyWrap: document.getElementById('historyWrap'),
       clearHistoryBtn: document.getElementById('clearHistoryBtn'),
-      previewModal: document.getElementById('previewModal'),
-      previewModalImg: document.getElementById('previewModalImg'),
-      closePreviewBtn: document.getElementById('closePreviewBtn'),
       resolutionBtns: Array.from(document.querySelectorAll('.resolution-btn')),
-      dropzones: Array.from(document.querySelectorAll('.dropzone')),
+      previewModal: document.getElementById('previewModal'),
+      previewImage: document.getElementById('previewImage'),
+      closePreviewBtn: document.getElementById('closePreviewBtn'),
     };
 
     function saveSettings() {
@@ -255,20 +228,14 @@
       localStorage.setItem('rh_prompt', el.prompt.value);
       localStorage.setItem('rh_resolution', state.resolution);
       localStorage.setItem('rh_dual_mode', el.dualMode.checked ? '1' : '0');
-      localStorage.setItem('rh_lock_pose', el.lockPose.checked ? '1' : '0');
-      localStorage.setItem('rh_lock_color', el.lockColor.checked ? '1' : '0');
-      localStorage.setItem('rh_lock_other_parts', el.lockOtherParts.checked ? '1' : '0');
     }
 
     function loadSettings() {
       el.apiKey.value = localStorage.getItem('rh_api_key') || '';
       el.workflowId.value = localStorage.getItem('rh_workflow_id') || '2033182322152972289';
-      el.prompt.value = localStorage.getItem('rh_prompt') || '让图1中的女模特穿上图2中的裤子，需确保衣服的一致性。';
+      el.prompt.value = localStorage.getItem('rh_prompt') || '让图1中的女模特穿上图2中的上衣，需确保衣服的一致性。';
       state.resolution = localStorage.getItem('rh_resolution') || '2k';
       el.dualMode.checked = localStorage.getItem('rh_dual_mode') === '1';
-      el.lockPose.checked = localStorage.getItem('rh_lock_pose') !== '0';
-      el.lockColor.checked = localStorage.getItem('rh_lock_color') !== '0';
-      el.lockOtherParts.checked = localStorage.getItem('rh_lock_other_parts') !== '0';
       paintResolutionButtons();
     }
 
@@ -295,18 +262,44 @@
       el.progressText.textContent = `${state.progress}%`;
     }
 
-    function escapeHtml(str = '') {
-      return str
-        .replaceAll('&', '&amp;')
-        .replaceAll('<', '&lt;')
-        .replaceAll('>', '&gt;')
-        .replaceAll('"', '&quot;')
-        .replaceAll("'", '&#039;');
+    function previewDataUrl(dataUrl, previewEl) {
+      previewEl.innerHTML = `<img src="${dataUrl}" alt="preview" class="h-full w-full rounded-2xl object-contain" />`;
     }
 
-    function showMessage(msg, tone = 'default') {
-      const color = tone === 'error' ? 'text-rose-300' : tone === 'running' ? 'text-violet-300' : 'text-slate-400';
-      el.resultWrap.innerHTML = `<div class="px-6 text-center text-sm ${color}">${escapeHtml(msg)}</div>`;
+    function handleFile(file, key, previewEl) {
+      if (!file || !file.type.startsWith('image/')) return alert('请上传图片文件');
+      const reader = new FileReader();
+      reader.onload = () => {
+        state.images[key] = reader.result;
+        previewDataUrl(reader.result, previewEl);
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function bindDropZone(zoneEl, inputEl, key, previewEl) {
+      inputEl.addEventListener('change', e => {
+        const file = e.target.files?.[0];
+        if (file) handleFile(file, key, previewEl);
+      });
+
+      ['dragenter', 'dragover'].forEach(evt => {
+        zoneEl.addEventListener(evt, e => {
+          e.preventDefault();
+          zoneEl.classList.add('drop-active');
+        });
+      });
+
+      ['dragleave', 'drop'].forEach(evt => {
+        zoneEl.addEventListener(evt, e => {
+          e.preventDefault();
+          zoneEl.classList.remove('drop-active');
+        });
+      });
+
+      zoneEl.addEventListener('drop', e => {
+        const file = e.dataTransfer?.files?.[0];
+        if (file) handleFile(file, key, previewEl);
+      });
     }
 
     function dataURLtoBlob(dataurl) {
@@ -317,64 +310,6 @@
       const u8arr = new Uint8Array(n);
       while (n--) u8arr[n] = bstr.charCodeAt(n);
       return new Blob([u8arr], { type: mime });
-    }
-
-    function fileToDataURL(file) {
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result);
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
-    }
-
-    async function detectDominantColorHex(dataUrl) {
-      return new Promise((resolve) => {
-        const img = new Image();
-        img.onload = () => {
-          const canvas = document.createElement('canvas');
-          const ctx = canvas.getContext('2d', { willReadFrequently: true });
-          const maxSide = 60;
-          const scale = Math.min(1, maxSide / Math.max(img.width, img.height));
-          canvas.width = Math.max(1, Math.round(img.width * scale));
-          canvas.height = Math.max(1, Math.round(img.height * scale));
-          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-          const { data } = ctx.getImageData(0, 0, canvas.width, canvas.height);
-          let r = 0, g = 0, b = 0, count = 0;
-          for (let i = 0; i < data.length; i += 4) {
-            const alpha = data[i + 3];
-            if (alpha < 200) continue;
-            const rr = data[i], gg = data[i + 1], bb = data[i + 2];
-            const maxv = Math.max(rr, gg, bb), minv = Math.min(rr, gg, bb);
-            if (maxv > 248 && minv > 248) continue;
-            if (maxv - minv < 8 && maxv > 235) continue;
-            r += rr; g += gg; b += bb; count++;
-          }
-          if (!count) return resolve('');
-          const rh = Math.round(r / count).toString(16).padStart(2, '0').toUpperCase();
-          const gh = Math.round(g / count).toString(16).padStart(2, '0').toUpperCase();
-          const bh = Math.round(b / count).toString(16).padStart(2, '0').toUpperCase();
-          resolve(`#${rh}${gh}${bh}`);
-        };
-        img.onerror = () => resolve('');
-        img.src = dataUrl;
-      });
-    }
-
-    async function renderPreviewAndAnalyze(file, key, previewEl) {
-      const dataUrl = await fileToDataURL(file);
-      state.images[key] = dataUrl;
-      previewEl.innerHTML = `<img src="${dataUrl}" alt="preview" class="h-full w-full rounded-2xl object-contain" />`;
-      if (key === 'top' || key === 'pants') {
-        const colorHex = await detectDominantColorHex(dataUrl);
-        if (key === 'top') state.topColorHex = colorHex || '';
-        if (key === 'pants') state.pantsColorHex = colorHex || '';
-        const activeHex = state.pantsColorHex || state.topColorHex || '';
-        state.dominantColorHex = activeHex;
-        el.colorHintText.innerHTML = activeHex
-          ? `<span class="inline-flex items-center gap-2"><span class="inline-block h-3 w-3 rounded-full border border-white/30" style="background:${activeHex}"></span>${activeHex}</span>`
-          : '未检测';
-      }
     }
 
     async function uploadImage(base64, apiKey, filename = `upload-${Date.now()}.png`) {
@@ -395,58 +330,29 @@
       return json.data.fileName;
     }
 
-    function normalizePromptReferences(prompt, mode) {
+    function normalizePrompt(prompt, mode) {
       let text = (prompt || '').trim();
+      if (!text) return '';
+
       if (mode === 'single') {
-        text = text
-          .replaceAll('图3', '图2')
-          .replaceAll('图三', '图二')
-          .replaceAll('第三张', '第二张')
-          .replaceAll('image3', 'image2')
-          .replaceAll('Image3', 'Image2');
-      }
-      return text;
-    }
-
-    function inferTargetType(prompt) {
-      const text = (prompt || '').toLowerCase();
-      const pantsWords = ['裤', '裤子', '长裤', '短裤', '阔腿裤', '半裙', '裙', '下装', '下半身'];
-      const topWords = ['上衣', 't恤', 't-shirt', '衬衫', '吊带', '背心', '毛衣', '外套', '上半身'];
-      const hasPants = pantsWords.some(word => text.includes(word));
-      const hasTop = topWords.some(word => text.includes(word));
-      if (hasPants && !hasTop) return 'pants';
-      if (hasTop && !hasPants) return 'top';
-      if (hasTop && hasPants) return 'both';
-      return 'unknown';
-    }
-
-    function enhancePrompt(basePrompt, mode) {
-      let text = normalizePromptReferences(basePrompt, mode);
-      const extras = [];
-      const targetType = inferTargetType(text);
-      const activeColorHex = mode === 'dual' ? (state.topColorHex || state.pantsColorHex || state.dominantColorHex) : (state.topColorHex || state.pantsColorHex || state.dominantColorHex);
-
-      if (targetType === 'pants') {
-        extras.push('本次任务仅替换下装/裤子，图1中的上衣、人物姿势、手臂动作、站姿、脸部、发型、背景、鞋子和其他未指定内容必须完全保持不变。');
-      } else if (targetType === 'top') {
-        extras.push('本次任务仅替换上衣，图1中的裤子/裙子、人物姿势、手臂动作、站姿、脸部、发型、背景、鞋子和其他未指定内容必须完全保持不变。');
-      } else if (targetType === 'both') {
-        extras.push('只替换提示词中明确指定的上衣和下装，人物姿势、脸部、发型、背景、镜头角度和体型保持不变。');
+        text = text.replaceAll('图3', '图2');
       }
 
-      if (el.lockPose.checked) {
-        extras.push('必须严格保持图1人物的原始站姿、手臂角度、腿部姿势、镜头角度、构图裁切、身体比例、发型、脸部、背景、光线和清晰度不变；禁止自动换动作、禁止重构人物、禁止改变拍摄视角。');
+      const lowerText = text;
+      const mentionsPants = /裤|长裤|短裤|半裙|短裙|裙子/.test(lowerText);
+      const mentionsTop = /上衣|T恤|短袖|衬衫|背心|毛衣|外套/.test(lowerText);
+
+      let tail = ' 保持人物脸部、发型、姿势、手势、构图、背景、镜头角度不变。';
+      if (mentionsPants && !mentionsTop) {
+        tail += ' 仅替换下装，未指定的上衣、鞋子、包袋与其他部分保持不变。';
+      } else if (mentionsTop && !mentionsPants) {
+        tail += ' 仅替换上衣，未指定的下装、鞋子、包袋与其他部分保持不变。';
+      } else {
+        tail += ' 未指定的服装与其他部分保持不变。';
       }
-      if (el.lockOtherParts.checked) {
-        extras.push('未被指定替换的服装、配饰、鞋子、包包必须保持不变，不要擅自新增、删除或替换其他衣物。');
-      }
-      if (el.lockColor.checked) {
-        extras.push('必须严格参考服装图的颜色、饱和度、明度、材质、面料纹理、版型、褶皱与细节；不要自动改色，不要把亮色变暗，不要把暗色变灰，不要偏紫、偏红、偏粉、偏蓝。');
-        if (activeColorHex) {
-          extras.push(`参考服装主色接近 ${activeColorHex}，生成时请尽量保持这个主色，允许误差极小，不要出现明显色差。`);
-        }
-      }
-      return [text, ...extras].join(' ');
+      tail += ' 严格参考上传服装图本身的颜色、材质、图案、版型与细节，不要自行改色，不要偏色。';
+
+      return text + tail;
     }
 
     function resolveGarmentMode() {
@@ -459,28 +365,19 @@
       if (dualMode) {
         if (!hasTop) throw new Error('你开启了双件模式，请先上传服装图1');
         if (!hasPants) throw new Error('你开启了双件模式，请先上传服装图2');
-        return {
-          mode: 'dual',
-          image2Data: state.images.top,
-          image3Data: state.images.pants,
-        };
+        return { mode: 'dual', image2Data: state.images.top, image3Data: state.images.pants };
       }
 
-      const singleData = state.images.top || state.images.pants;
-      return {
-        mode: 'single',
-        image2Data: singleData,
-        image3Data: TRANSPARENT_PNG_DATA_URL,
-      };
+      return { mode: 'single', image2Data: state.images.top || state.images.pants, image3Data: TRANSPARENT_PNG_DATA_URL };
     }
 
-    async function runWorkflow({ apiKey, workflowId, prompt, modelFileName, topFileName, pantsFileName }) {
+    async function runWorkflow({ apiKey, workflowId, prompt, modelFileName, image2FileName, image3FileName }) {
       const payload = {
         addMetadata: true,
         nodeInfoList: [
           { nodeId: '4', fieldName: 'image', fieldValue: modelFileName },
-          { nodeId: '11', fieldName: 'image', fieldValue: topFileName },
-          { nodeId: '10', fieldName: 'image', fieldValue: pantsFileName },
+          { nodeId: '11', fieldName: 'image', fieldValue: image2FileName },
+          { nodeId: '10', fieldName: 'image', fieldValue: image3FileName },
           { nodeId: '8', fieldName: 'resolution', fieldValue: state.resolution },
           { nodeId: '12', fieldName: 'text', fieldValue: prompt },
         ],
@@ -552,7 +449,6 @@
         el.historyWrap.innerHTML = '<div class="col-span-full rounded-2xl border border-slate-800 bg-slate-950 p-6 text-center text-sm text-slate-500">暂无历史记录</div>';
         return;
       }
-
       el.historyWrap.innerHTML = history.map(item => `
         <div class="overflow-hidden rounded-2xl border border-slate-800 bg-slate-950">
           <button onclick="openPreview('${item.url}')" class="block w-full">
@@ -567,7 +463,6 @@
     }
 
     function showResultImage(url) {
-      state.latestResultUrl = url;
       el.resultWrap.innerHTML = `
         <div class="w-full">
           <button onclick="openPreview('${url}')" class="block w-full">
@@ -580,6 +475,20 @@
           </div>
         </div>
       `;
+    }
+
+    function showMessage(msg, tone = 'default') {
+      const color = tone === 'error' ? 'text-rose-300' : tone === 'running' ? 'text-violet-300' : 'text-slate-400';
+      el.resultWrap.innerHTML = `<div class="px-6 text-center text-sm ${color}">${escapeHtml(msg)}</div>`;
+    }
+
+    function escapeHtml(str = '') {
+      return str
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
     }
 
     function paintResolutionButtons() {
@@ -596,38 +505,17 @@
       el.pantsInput.disabled = !dualMode;
       el.pantsBlock.classList.toggle('opacity-60', !dualMode);
       if (!dualMode && !state.images.pants) {
-        el.pantsPreview.innerHTML = '<div class="px-4 text-center text-sm text-slate-500">当前为单图模式：图3会自动关闭。你可以把裤子图直接拖到服装图1。</div>';
+        el.pantsPreview.innerHTML = '<div class="px-4 text-center text-sm text-slate-500">当前为单图模式：图3会自动关闭。你可以把裤子图直接上传到服装图1。</div>';
       }
       if (dualMode && !state.images.pants) {
-        el.pantsPreview.innerHTML = '<div class="px-4 text-center text-sm text-slate-500">当前为双件模式，请上传或拖入第二张服装图。</div>';
+        el.pantsPreview.innerHTML = '<div class="px-4 text-center text-sm text-slate-500">当前为双件模式，请上传服装图2。</div>';
       }
-    }
-
-    function openPreview(url) {
-      el.previewModalImg.src = url;
-      el.previewModal.classList.remove('hidden');
-      el.previewModal.classList.add('flex');
-    }
-
-    function closePreview() {
-      el.previewModal.classList.add('hidden');
-      el.previewModal.classList.remove('flex');
-      el.previewModalImg.src = '';
-    }
-
-    function stopWaitingByUser() {
-      state.stoppedByUser = true;
-      stopAllTimers();
-      setGeneratingUi(false);
-      setStatus('已停止等待', 'default');
-      showMessage(`已停止网页端等待。${state.currentTaskId ? `当前任务 ID：${state.currentTaskId}` : ''} RunningHub 服务器中的任务可能仍在继续。`, 'default');
     }
 
     async function handleGenerate() {
       const apiKey = el.apiKey.value.trim();
       const workflowId = el.workflowId.value.trim();
       const prompt = el.prompt.value.trim();
-
       if (!apiKey) return alert('请先输入 API Key');
       if (!workflowId) return alert('请先输入工作流 ID');
       if (!state.images.model) return alert('请先上传模特图');
@@ -641,22 +529,18 @@
       }
 
       saveSettings();
-      state.stoppedByUser = false;
       state.currentTaskId = null;
-      state.latestResultUrl = '';
       setGeneratingUi(true);
       setStatus('上传图片中', 'running');
+      showMessage(`正在上传图片并提交工作流，请稍候… 当前模式：${garmentConfig.mode === 'dual' ? '双件模式' : '单图模式'}。`, 'running');
       setProgress(8);
       startElapsedTimer();
       el.taskIdText.textContent = '-';
       el.taskStatusText.textContent = 'UPLOADING';
       el.taskCostTimeText.textContent = '-';
 
-      const finalPrompt = enhancePrompt(prompt, garmentConfig.mode);
-      showMessage(`正在上传图片并提交工作流，请稍候… 当前模式：${garmentConfig.mode === 'dual' ? '双件模式' : '单图模式'}。`, 'running');
-
       try {
-        const [modelFileName, topFileName, pantsFileName] = await Promise.all([
+        const [modelFileName, image2FileName, image3FileName] = await Promise.all([
           uploadImage(state.images.model, apiKey, `model-${Date.now()}.png`),
           uploadImage(garmentConfig.image2Data, apiKey, `image2-${Date.now()}.png`),
           uploadImage(garmentConfig.image3Data, apiKey, garmentConfig.mode === 'dual' ? `image3-${Date.now()}.png` : `blank-image3-${Date.now()}.png`),
@@ -665,14 +549,15 @@
         setStatus('提交任务中', 'running');
         setProgress(18);
 
-        const runResult = await runWorkflow({ apiKey, workflowId, prompt: finalPrompt, modelFileName, topFileName, pantsFileName });
+        const finalPrompt = normalizePrompt(prompt, garmentConfig.mode);
+        const runResult = await runWorkflow({ apiKey, workflowId, prompt: finalPrompt, modelFileName, image2FileName, image3FileName });
         const taskId = runResult.taskId || runResult.data?.taskId;
         state.currentTaskId = taskId;
         el.taskIdText.textContent = taskId;
         el.taskStatusText.textContent = runResult.status || '-';
         setStatus('任务已提交', 'running');
-        setProgress(26);
         showMessage('任务已提交，正在轮询结果…', 'running');
+        setProgress(26);
 
         state.pollTimer = setInterval(async () => {
           try {
@@ -700,7 +585,7 @@
               setProgress(100);
               if (!resultUrl) throw new Error('任务成功，但没有解析到结果图片 URL');
               showResultImage(resultUrl);
-              saveHistory({ url: resultUrl, prompt: finalPrompt, time: new Date().toLocaleString('zh-CN') });
+              saveHistory({ url: resultUrl, prompt, time: new Date().toLocaleString('zh-CN') });
               setGeneratingUi(false);
               return;
             }
@@ -726,45 +611,33 @@
       }
     }
 
-    async function handleInputFile(file, inputId) {
-      if (!file || !file.type.startsWith('image/')) return;
-      if (inputId === 'modelInput') await renderPreviewAndAnalyze(file, 'model', el.modelPreview);
-      if (inputId === 'topInput') await renderPreviewAndAnalyze(file, 'top', el.topPreview);
-      if (inputId === 'pantsInput') await renderPreviewAndAnalyze(file, 'pants', el.pantsPreview);
+    function stopWaitingByUser() {
+      stopAllTimers();
+      setGeneratingUi(false);
+      setStatus('已停止等待', 'default');
+      showMessage(`已停止网页端等待。${state.currentTaskId ? `你当前任务 ID：${state.currentTaskId}` : ''} RunningHub 服务器中的任务可能仍在继续。`, 'default');
     }
 
-    function bindDropzones() {
-      el.dropzones.forEach(zone => {
-        const inputId = zone.dataset.input;
-        const input = document.getElementById(inputId);
-        zone.addEventListener('dragover', (e) => {
-          e.preventDefault();
-          zone.classList.add('drop-active');
-        });
-        zone.addEventListener('dragleave', () => zone.classList.remove('drop-active'));
-        zone.addEventListener('drop', async (e) => {
-          e.preventDefault();
-          zone.classList.remove('drop-active');
-          const file = e.dataTransfer?.files?.[0];
-          if (!file) return;
-          const dt = new DataTransfer();
-          dt.items.add(file);
-          input.files = dt.files;
-          await handleInputFile(file, inputId);
-        });
-        input.addEventListener('change', async (e) => {
-          const file = e.target.files?.[0];
-          if (file) await handleInputFile(file, inputId);
-        });
-      });
+    function openPreview(url) {
+      el.previewImage.src = url;
+      el.previewModal.classList.remove('hidden');
+      el.previewModal.classList.add('flex');
+    }
+
+    function closePreview() {
+      el.previewModal.classList.add('hidden');
+      el.previewModal.classList.remove('flex');
+      el.previewImage.src = '';
     }
 
     window.openPreview = openPreview;
 
+    bindDropZone(el.modelDrop, el.modelInput, 'model', el.modelPreview);
+    bindDropZone(el.topDrop, el.topInput, 'top', el.topPreview);
+    bindDropZone(el.pantsDrop, el.pantsInput, 'pants', el.pantsPreview);
+
     el.dualMode.addEventListener('change', () => { saveSettings(); refreshPantsState(); });
-    el.lockPose.addEventListener('change', saveSettings);
-    el.lockColor.addEventListener('change', saveSettings);
-    el.lockOtherParts.addEventListener('change', saveSettings);
+    el.resolutionBtns.forEach(btn => btn.addEventListener('click', () => { state.resolution = btn.dataset.resolution; paintResolutionButtons(); saveSettings(); }));
     el.apiKey.addEventListener('change', saveSettings);
     el.workflowId.addEventListener('change', saveSettings);
     el.prompt.addEventListener('change', saveSettings);
@@ -774,13 +647,10 @@
     el.previewModal.addEventListener('click', (e) => { if (e.target === el.previewModal) closePreview(); });
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closePreview(); });
     el.clearHistoryBtn.addEventListener('click', () => { localStorage.removeItem('rh_history'); renderHistory(); });
-    el.resolutionBtns.forEach(btn => btn.addEventListener('click', () => { state.resolution = btn.dataset.resolution; paintResolutionButtons(); saveSettings(); }));
 
     loadSettings();
-    bindDropzones();
     renderHistory();
     refreshPantsState();
-    paintResolutionButtons();
     setGeneratingUi(false);
   </script>
 </body>

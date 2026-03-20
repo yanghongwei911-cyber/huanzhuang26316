@@ -46,6 +46,11 @@
               <textarea id="prompt" rows="4" class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm outline-none transition focus:border-violet-500">让图1中的女模特穿上图2中的上衣，需确保衣服的一致性。</textarea>
             </div>
             <div>
+              <label class="mb-1 block text-xs text-slate-400">颜色要求（严格，可选）</label>
+              <textarea id="colorRequirement" rows="3" placeholder="例如：上衣必须是纯黑色，裤子必须是浅蓝色牛仔，不允许偏色、串色、自动改成别的颜色。" class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm outline-none transition focus:border-violet-500"></textarea>
+              <p class="mt-2 text-xs leading-5 text-slate-500">填写后，系统会自动拼接“严格按指定颜色生成、禁止擅自改色/偏色”的强约束指令，尽量减少颜色识别错误。</p>
+            </div>
+            <div>
               <label class="mb-1 block text-xs text-slate-400">输出分辨率</label>
               <div class="grid grid-cols-4 gap-2">
                 <button data-resolution="1k" class="resolution-btn rounded-2xl border border-slate-700 bg-slate-950 px-3 py-2 text-xs">1K</button>
@@ -216,6 +221,7 @@
       apiKey: document.getElementById('apiKey'),
       workflowId: document.getElementById('workflowId'),
       prompt: document.getElementById('prompt'),
+      colorRequirement: document.getElementById('colorRequirement'),
       dualMode: document.getElementById('dualMode'),
       modelInput: document.getElementById('modelInput'),
       topInput: document.getElementById('topInput'),
@@ -258,6 +264,7 @@
       localStorage.setItem('rh_api_key', el.apiKey.value.trim());
       localStorage.setItem('rh_workflow_id', el.workflowId.value.trim());
       localStorage.setItem('rh_prompt', el.prompt.value);
+      localStorage.setItem('rh_color_requirement', el.colorRequirement.value);
       localStorage.setItem('rh_resolution', state.resolution);
       localStorage.setItem('rh_dual_mode', el.dualMode.checked ? '1' : '0');
     }
@@ -266,6 +273,7 @@
       el.apiKey.value = localStorage.getItem('rh_api_key') || '';
       el.workflowId.value = localStorage.getItem('rh_workflow_id') || '2033182322152972289';
       el.prompt.value = localStorage.getItem('rh_prompt') || '让图1中的女模特穿上图2中的上衣，需确保衣服的一致性。';
+      el.colorRequirement.value = localStorage.getItem('rh_color_requirement') || '';
       state.resolution = localStorage.getItem('rh_resolution') || '2k';
       el.dualMode.checked = localStorage.getItem('rh_dual_mode') === '1';
       paintResolutionButtons();
@@ -360,6 +368,20 @@
       return (prompt || '').replaceAll('图3', '图2');
     }
 
+
+    function buildStrictColorPrompt(prompt, colorRequirement, dualMode) {
+      const basePrompt = (prompt || '').trim();
+      const colorText = (colorRequirement || '').trim();
+      if (!colorText) return basePrompt;
+
+      const garmentScope = dualMode ? '上衣与下装' : '目标服装';
+      return `${basePrompt}
+
+【颜色严格约束】
+${colorText}
+请严格按照以上颜色要求生成，${garmentScope}的颜色必须与要求完全一致。禁止擅自改色、偏色、串色、提亮、压暗、改变冷暖色调，禁止把纯色改成花色或把花色改成其他配色；如果识别不确定，也必须优先遵守上述颜色要求。`;
+    }
+
     function resolveGarmentMode(images, dualMode) {
       const hasTop = !!images.top;
       const hasPants = !!images.pants;
@@ -389,6 +411,7 @@
       const apiKey = el.apiKey.value.trim();
       const workflowId = el.workflowId.value.trim();
       let prompt = el.prompt.value.trim();
+      const colorRequirement = el.colorRequirement.value.trim();
 
       if (!apiKey) throw new Error('请先输入 API Key');
       if (!workflowId) throw new Error('请先输入工作流 ID');
@@ -399,6 +422,7 @@
       if (garmentConfig.mode === 'single') {
         prompt = normalizePromptForSingleMode(prompt);
       }
+      prompt = buildStrictColorPrompt(prompt, colorRequirement, el.dualMode.checked);
 
       return {
         id: uid(),
@@ -406,6 +430,7 @@
         workflowId,
         prompt,
         dualMode: el.dualMode.checked,
+        colorRequirement,
         resolution: state.resolution,
         images: {
           model: state.images.model,
@@ -493,7 +518,7 @@
       el.addQueueBtn.disabled = isGenerating;
       el.startQueueBtn.disabled = isGenerating || !state.queue.some(item => item.status === 'queued' || item.status === 'failed');
       el.cancelBtn.disabled = !isGenerating;
-      el.clearPendingBtn.disabled = isGenerating && !state.stopAfterCurrent;
+      el.clearPendingBtn.disabled = !state.queue.some(item => item.status === 'queued' || item.status === 'failed');
     }
 
     function escapeHtml(str = '') {
@@ -611,6 +636,7 @@
                 <div class="text-sm font-semibold">任务 ${index + 1}</div>
                 <div class="text-xs opacity-80">${item.dualMode ? '双件模式' : '单图模式'} · ${item.resolution.toUpperCase()}</div>
                 <div class="line-clamp-2 text-xs opacity-80">${escapeHtml(item.prompt)}</div>
+                ${item.colorRequirement ? `<div class="line-clamp-2 text-[11px] text-amber-200/90">颜色要求：${escapeHtml(item.colorRequirement)}</div>` : ''}
                 <div class="text-[11px] opacity-70">加入时间：${item.createdAt}</div>
                 ${item.taskId ? `<div class="text-[11px] opacity-70">Task ID：${item.taskId}</div>` : ''}
                 ${item.errorMessage ? `<div class="text-[11px] text-rose-300">${escapeHtml(item.errorMessage)}</div>` : ''}
@@ -619,7 +645,7 @@
             <div class="flex flex-col items-start gap-2 md:items-end">
               <div class="rounded-full border px-3 py-1 text-xs">${labelMap[item.status] || item.status}</div>
               ${item.resultUrl ? `<button onclick="openPreview('${item.resultUrl}')" class="rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-slate-200">查看结果</button>` : ''}
-              ${(item.status === 'queued' || item.status === 'failed') && !state.queueRunning ? `<button onclick="removeQueueItem('${item.id}')" class="rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-slate-200">移除</button>` : ''}
+              ${(item.status === 'queued' || item.status === 'failed') ? `<button onclick="removeQueueItem('${item.id}')" class="rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-slate-200 hover:border-rose-500 hover:text-rose-200">${item.status === 'queued' ? '取消任务' : '移除任务'}</button>` : ''}
             </div>
           </div>
         </div>
@@ -641,8 +667,15 @@
     }
 
     function removeQueueItem(taskId) {
+      const target = state.queue.find(item => item.id === taskId);
+      if (!target) return;
+      if (target.id === state.activeQueueId || ['uploading', 'running'].includes(target.status)) return;
       state.queue = state.queue.filter(item => item.id !== taskId);
       renderQueue();
+      if (!state.queue.length && !state.isGenerating) {
+        setStatus('队列已清空', 'default');
+        showMessage('已从队列中移除选中的等待任务。', 'default');
+      }
     }
     window.removeQueueItem = removeQueueItem;
 
@@ -881,6 +914,7 @@
     el.apiKey.addEventListener('change', saveSettings);
     el.workflowId.addEventListener('change', saveSettings);
     el.prompt.addEventListener('change', saveSettings);
+    el.colorRequirement.addEventListener('change', saveSettings);
     el.generateBtn.addEventListener('click', handleGenerate);
     el.addQueueBtn.addEventListener('click', addCurrentTaskToQueue);
     el.startQueueBtn.addEventListener('click', processQueue);

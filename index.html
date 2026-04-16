@@ -73,21 +73,21 @@
           <h2 class="mb-4 text-sm font-semibold text-violet-300">素材上传</h2>
           <div class="space-y-4">
             <div>
-              <label class="mb-2 block text-xs text-slate-400">模特原图（节点4 / Image1）</label>
+              <label class="mb-2 block text-xs text-slate-400">模特原图（节点9 / image）</label>
               <label id="modelDrop" class="drop-zone block cursor-pointer rounded-3xl border border-dashed border-slate-700 bg-slate-950 p-4 transition hover:border-violet-500">
                 <input id="modelInput" type="file" accept="image/*" class="hidden" />
                 <div id="modelPreview" class="flex min-h-[170px] items-center justify-center overflow-hidden rounded-2xl bg-slate-900 text-center text-sm text-slate-500">点击上传或直接拖拽模特图到这里</div>
               </label>
             </div>
             <div>
-              <label class="mb-2 block text-xs text-slate-400">服装图1（节点11 / Image2）</label>
+              <label class="mb-2 block text-xs text-slate-400">服装图1（节点10 / image）</label>
               <label id="topDrop" class="drop-zone block cursor-pointer rounded-3xl border border-dashed border-slate-700 bg-slate-950 p-4 transition hover:border-violet-500">
                 <input id="topInput" type="file" accept="image/*" class="hidden" />
                 <div id="topPreview" class="flex min-h-[170px] items-center justify-center overflow-hidden rounded-2xl bg-slate-900 text-center text-sm text-slate-500">点击上传或直接拖拽服装图1到这里</div>
               </label>
             </div>
             <div id="pantsBlock">
-              <label class="mb-2 block text-xs text-slate-400">服装图2（节点10 / Image3，双件模式时使用）</label>
+              <label class="mb-2 block text-xs text-slate-400">服装图2（节点13 / image，双件模式时使用）</label>
               <label id="pantsDrop" class="drop-zone block cursor-pointer rounded-3xl border border-dashed border-slate-700 bg-slate-950 p-4 transition hover:border-violet-500">
                 <input id="pantsInput" type="file" accept="image/*" class="hidden" />
                 <div id="pantsPreview" class="flex min-h-[170px] items-center justify-center overflow-hidden rounded-2xl bg-slate-900 text-center text-sm text-slate-500">点击上传或直接拖拽服装图2到这里</div>
@@ -96,7 +96,7 @@
           </div>
 
           <div class="mt-4 rounded-2xl border border-sky-500/20 bg-sky-500/10 p-3 text-xs leading-6 text-sky-100">
-            当前按你这条工作流接入：<span class="font-semibold">4 = 模特图</span>、<span class="font-semibold">11 = 图2参考图</span>、<span class="font-semibold">10 = 图3参考图</span>、<span class="font-semibold">12 = 提示词</span>。<br>
+            当前按你这条工作流接入：<span class="font-semibold">9 = 模特图</span>、<span class="font-semibold">10 = 图2参考图</span>、<span class="font-semibold">13 = 图3参考图</span>、<span class="font-semibold">7 = 提示词</span>。<br>
             本版重点增加的是多任务排队，不改变你现在这条换装逻辑。
           </div>
 
@@ -457,11 +457,11 @@ ${colorText}
       const payload = {
         addMetadata: true,
         nodeInfoList: [
-          { nodeId: '4', fieldName: 'image', fieldValue: modelFileName },
-          { nodeId: '11', fieldName: 'image', fieldValue: topFileName },
-          { nodeId: '10', fieldName: 'image', fieldValue: pantsFileName },
-          { nodeId: '8', fieldName: 'resolution', fieldValue: resolution },
-          { nodeId: '12', fieldName: 'text', fieldValue: prompt },
+          { nodeId: '9', fieldName: 'image', fieldValue: modelFileName },
+          { nodeId: '10', fieldName: 'image', fieldValue: topFileName },
+          { nodeId: '13', fieldName: 'image', fieldValue: pantsFileName },
+          { nodeId: '1', fieldName: 'resolution', fieldValue: resolution },
+          { nodeId: '7', fieldName: 'text', fieldValue: prompt },
         ],
         instanceType: 'default',
         usePersonalQueue: false,

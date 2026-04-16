@@ -39,7 +39,7 @@
             </div>
             <div>
               <label class="mb-1 block text-xs text-slate-400">工作流 ID</label>
-              <input id="workflowId" type="text" value="2033182322152972289" class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm outline-none transition focus:border-violet-500" />
+              <input id="workflowId" type="text" value="2044693321288781825" class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm outline-none transition focus:border-violet-500" />
             </div>
             <div>
               <label class="mb-1 block text-xs text-slate-400">提示词</label>
@@ -271,7 +271,10 @@
 
     function loadSettings() {
       el.apiKey.value = localStorage.getItem('rh_api_key') || '';
-      el.workflowId.value = localStorage.getItem('rh_workflow_id') || '2033182322152972289';
+      const savedWorkflowId = localStorage.getItem('rh_workflow_id');
+      el.workflowId.value = (!savedWorkflowId || savedWorkflowId === '2033182322152972289')
+        ? '2044693321288781825'
+        : savedWorkflowId;
       el.prompt.value = localStorage.getItem('rh_prompt') || '让图1中的女模特穿上图2中的上衣，需确保衣服的一致性。';
       el.colorRequirement.value = localStorage.getItem('rh_color_requirement') || '';
       state.resolution = localStorage.getItem('rh_resolution') || '2k';
